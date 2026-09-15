@@ -188,7 +188,7 @@ export interface DiscountCode {
   value: number;
   expires_at: string | null;
   usage_limit: number | null;
-  times_used?: number;
+  usages_count?: number;
   is_active: boolean;
 }
 

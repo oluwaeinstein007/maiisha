@@ -3,17 +3,14 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Pencil, Plus, XCircle } from "lucide-react";
-import { api, swrFetcherResource } from "@/lib/api";
+import { api, swrFetcher } from "@/lib/api";
 import { formatDate, formatPence } from "@/lib/money";
 import { Button } from "@/components/ui/Button";
 import { DiscountCodeForm } from "@/components/admin/DiscountCodeForm";
 import type { DiscountCode } from "@/lib/types";
 
 export default function AdminDiscountCodesPage() {
-  const { data: codes, mutate } = useSWR<DiscountCode[]>(
-    "/api/admin/discount-codes",
-    swrFetcherResource,
-  );
+  const { data: codes, mutate } = useSWR<DiscountCode[]>("/api/admin/discount-codes", swrFetcher);
   const [editing, setEditing] = useState<DiscountCode | "new" | null>(null);
 
   const handleDeactivate = async (id: number) => {
@@ -66,7 +63,7 @@ export default function AdminDiscountCodesPage() {
                   {code.type === "percentage" ? `${code.value}%` : formatPence(code.value)}
                 </td>
                 <td className="px-4 py-3 text-ink-soft">
-                  {code.times_used ?? 0}
+                  {code.usages_count ?? 0}
                   {code.usage_limit ? ` / ${code.usage_limit}` : ""}
                 </td>
                 <td className="px-4 py-3 text-ink-soft">
