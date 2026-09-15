@@ -66,6 +66,19 @@ class AuthTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_repeated_failed_logins_are_rate_limited(): void
+    {
+        User::factory()->create(['email' => 'jane@example.com', 'password' => bcrypt('password123')]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', ['email' => 'jane@example.com', 'password' => 'wrong'])
+                ->assertUnprocessable();
+        }
+
+        $this->postJson('/api/auth/login', ['email' => 'jane@example.com', 'password' => 'wrong'])
+            ->assertStatus(429);
+    }
+
     public function test_a_logged_in_user_can_log_out(): void
     {
         $user = User::factory()->create(['password' => bcrypt('password123')]);

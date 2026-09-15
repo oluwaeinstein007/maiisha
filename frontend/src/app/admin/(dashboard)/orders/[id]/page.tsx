@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import useSWR from "swr";
-import { api, ApiError, swrFetcher } from "@/lib/api";
+import { api, ApiError, swrFetcherResource } from "@/lib/api";
 import { formatDateTime, formatPence } from "@/lib/money";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_STYLES } from "@/lib/orderStatus";
 import { OrderStatusTimeline } from "@/components/order/OrderStatusTimeline";
@@ -16,7 +16,7 @@ const SETTABLE_STATUSES: OrderStatus[] = ["placed", "processing", "shipped", "de
 
 export default function AdminOrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const { data: order, mutate } = useSWR<Order>(`/api/admin/orders/${params.id}`, swrFetcher);
+  const { data: order, mutate } = useSWR<Order>(`/api/admin/orders/${params.id}`, swrFetcherResource);
 
   const [nextStatus, setNextStatus] = useState<OrderStatus | "">("");
   const [updating, setUpdating] = useState(false);

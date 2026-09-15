@@ -3,14 +3,17 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Pencil, Plus, XCircle } from "lucide-react";
-import { api, swrFetcher } from "@/lib/api";
+import { api, swrFetcherResource } from "@/lib/api";
 import { formatDate, formatPence } from "@/lib/money";
 import { Button } from "@/components/ui/Button";
 import { DiscountCodeForm } from "@/components/admin/DiscountCodeForm";
 import type { DiscountCode } from "@/lib/types";
 
 export default function AdminDiscountCodesPage() {
-  const { data: codes, mutate } = useSWR<DiscountCode[]>("/api/admin/discount-codes", swrFetcher);
+  const { data: codes, mutate } = useSWR<DiscountCode[]>(
+    "/api/admin/discount-codes",
+    swrFetcherResource,
+  );
   const [editing, setEditing] = useState<DiscountCode | "new" | null>(null);
 
   const handleDeactivate = async (id: number) => {

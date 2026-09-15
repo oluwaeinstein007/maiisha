@@ -16,11 +16,15 @@ class PasswordResetController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        // Password::sendResetLink() only actually emails a link when the address is
+        // registered, but its return status differs depending on whether it is —
+        // surfacing that would let anyone enumerate which emails have accounts
+        // (OWASP A07). Always give the same generic response regardless.
+        Password::sendResetLink($request->only('email'));
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => __($status)])
-            : response()->json(['message' => __($status)], 422);
+        return response()->json([
+            'message' => 'If an account exists for that email, a password reset link has been sent.',
+        ]);
     }
 
     public function reset(Request $request)

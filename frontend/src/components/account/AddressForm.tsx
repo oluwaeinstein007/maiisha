@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { api, ApiError, fieldError } from "@/lib/api";
-import { Input } from "@/components/ui/Field";
+import { Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import type { Address } from "@/lib/types";
 
@@ -12,6 +12,11 @@ interface AddressFormProps {
   onCancel: () => void;
 }
 
+// UK-only at launch (PRD §1.1/§7.2) — the backend validates `country` as a
+// 2-letter ISO code. A single option for now; more can be added once
+// international delivery zones are switched on (PRD §8).
+const COUNTRY_OPTIONS = [{ code: "GB", label: "United Kingdom" }];
+
 const emptyForm = {
   label: "",
   full_name: "",
@@ -19,7 +24,7 @@ const emptyForm = {
   line2: "",
   city: "",
   postcode: "",
-  country: "United Kingdom",
+  country: "GB",
   phone: "",
   is_default: false,
 };
@@ -122,13 +127,19 @@ export function AddressForm({ address, onSaved, onCancel }: AddressFormProps) {
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
+        <Select
           label="Country"
           required
           value={form.country}
-          onChange={update("country")}
+          onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
           error={fieldError(errors, "country")}
-        />
+        >
+          {COUNTRY_OPTIONS.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.label}
+            </option>
+          ))}
+        </Select>
         <Input
           label="Phone"
           type="tel"

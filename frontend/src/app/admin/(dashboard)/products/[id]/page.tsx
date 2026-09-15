@@ -12,7 +12,7 @@ export default function EditProductPage() {
   const params = useParams<{ id: string }>();
   const { data: product, mutate } = useSWR<Product>(
     `/api/admin/products/${params.id}`,
-    swrFetcher,
+    swrFetcherResource,
   );
 
   if (!product) {

@@ -32,12 +32,22 @@ Route::post('/cart/items', [CartController::class, 'store']);
 Route::patch('/cart/items/{item}', [CartController::class, 'update']);
 Route::delete('/cart/items/{item}', [CartController::class, 'destroy']);
 
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLink']);
-Route::post('/auth/reset-password', [PasswordResetController::class, 'reset']);
+// Tighter, purpose-specific limits on top of the general "api" throttle — these
+// are the classic brute-force/enumeration/spam targets (OWASP A07, NFR-1).
+Route::middleware('throttle:auth-attempts')->group(function () {
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+});
 
-Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
+Route::middleware('throttle:password-reset')->group(function () {
+    Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLink']);
+    Route::post('/auth/reset-password', [PasswordResetController::class, 'reset']);
+});
+
+// Signature-verified (see StripeWebhookController), so it's Stripe's own retry
+// traffic, not a caller that needs — or should risk being dropped by — throttling.
+Route::withoutMiddleware('throttle:api')
+    ->post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 
 // --- Authenticated (customer) ---
 

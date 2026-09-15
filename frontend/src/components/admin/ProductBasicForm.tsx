@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import useSWR from "swr";
-import { api, ApiError, fieldError, swrFetcher } from "@/lib/api";
+import { apiResource, ApiError, fieldError, swrFetcherResource } from "@/lib/api";
 import { Input, Select, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import type { Category, Product } from "@/lib/types";
@@ -13,7 +13,7 @@ interface ProductBasicFormProps {
 }
 
 export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
-  const { data: categories } = useSWR<Category[]>("/api/categories", swrFetcher);
+  const { data: categories } = useSWR<Category[]>("/api/categories", swrFetcherResource);
 
   const [form, setForm] = useState({
     category_id: product?.category_id ?? product?.category.id ?? "",
@@ -46,8 +46,8 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
 
     try {
       const saved = product
-        ? await api.put<Product>(`/api/admin/products/${product.id}`, payload)
-        : await api.post<Product>("/api/admin/products", payload);
+        ? await apiResource.put<Product>(`/api/admin/products/${product.id}`, payload)
+        : await apiResource.post<Product>("/api/admin/products", payload);
       onSaved(saved);
     } catch (err) {
       if (err instanceof ApiError) {

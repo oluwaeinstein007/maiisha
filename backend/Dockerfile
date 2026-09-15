@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
