@@ -79,6 +79,35 @@ class AdminOrderManagementTest extends TestCase
         $this->assertDatabaseHas('shipments', ['order_id' => $order->id, 'status' => 'delivered']);
     }
 
+    public function test_cancelling_a_placed_order_restocks_its_items(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+        $variant = $order->items->first()->variant;
+        $stockBefore = $variant->stock_quantity;
+
+        $response = $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", [
+            'status' => 'cancelled',
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals('cancelled', $order->fresh()->status);
+        $this->assertEquals($stockBefore + 1, $variant->fresh()->stock_quantity);
+    }
+
+    public function test_cancelling_an_already_cancelled_order_does_not_double_restock(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+        $variant = $order->items->first()->variant;
+        $stockBefore = $variant->stock_quantity;
+
+        $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", ['status' => 'cancelled']);
+        $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", ['status' => 'cancelled']);
+
+        $this->assertEquals($stockBefore + 1, $variant->fresh()->stock_quantity);
+    }
+
     public function test_the_dashboard_reports_revenue_and_low_stock(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

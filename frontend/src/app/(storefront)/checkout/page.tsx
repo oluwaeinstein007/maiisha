@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import useSWR from "swr";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { AddressSelector } from "@/components/checkout/AddressSelector";
 import { StripePaymentForm } from "@/components/checkout/StripePaymentForm";
@@ -28,9 +29,6 @@ function CheckoutFlow() {
   const [addressId, setAddressId] = useState<number | null>(null);
   const [discountCode, setDiscountCode] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
-  const [preview, setPreview] = useState<CheckoutPreview | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(true);
 
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -38,33 +36,23 @@ function CheckoutFlow() {
     null,
   );
 
-  const loadPreview = async (code?: string) => {
-    setPreviewLoading(true);
-    setPreviewError(null);
-    try {
-      const data = await api.post<CheckoutPreview>("/api/checkout/preview", {
-        discount_code: code || undefined,
-      });
-      setPreview(data);
-      setAppliedCode(code ?? "");
-    } catch (err) {
-      setPreview(null);
-      setPreviewError(
-        err instanceof ApiError ? fieldError(err.errors, "discount_code") ?? err.message : "Could not calculate totals.",
-      );
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
+  const hasItems = !cartLoading && !!cart && cart.items.length > 0;
 
-  useEffect(() => {
-    if (!cartLoading && cart && cart.items.length > 0) {
-      loadPreview();
-    } else if (!cartLoading) {
-      setPreviewLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartLoading, cart?.items.length]);
+  const {
+    data: preview,
+    error: previewErrorObj,
+    isLoading: previewLoading,
+  } = useSWR(
+    hasItems ? ["/api/checkout/preview", appliedCode] : null,
+    ([, code]) =>
+      api.post<CheckoutPreview>("/api/checkout/preview", { discount_code: code || undefined }),
+  );
+
+  const previewError = previewErrorObj
+    ? previewErrorObj instanceof ApiError
+      ? (fieldError(previewErrorObj.errors, "discount_code") ?? previewErrorObj.message)
+      : "Could not calculate totals."
+    : null;
 
   const handlePlaceOrder = async () => {
     if (!addressId) return;
@@ -142,7 +130,7 @@ function CheckoutFlow() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => loadPreview(discountCode)}
+                onClick={() => setAppliedCode(discountCode)}
                 loading={previewLoading}
               >
                 Apply

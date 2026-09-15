@@ -10,6 +10,7 @@ use App\Models\DiscountCode;
 use App\Models\DiscountCodeUsage;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\ProductVariant;
 use App\Services\VatCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -88,9 +89,9 @@ class CheckoutController extends Controller
         }
 
         foreach ($cart->items as $item) {
-            if ($item->quantity > $item->variant->stock_quantity) {
+            if (! $item->variant->is_active || $item->quantity > $item->variant->stock_quantity) {
                 throw ValidationException::withMessages([
-                    'cart' => "{$item->variant->product->name} no longer has enough stock.",
+                    'cart' => "{$item->variant->product->name} is no longer available in that quantity.",
                 ]);
             }
         }
@@ -132,7 +133,19 @@ class CheckoutController extends Controller
 
                 // Stock is reserved at order creation, not at payment success, so two
                 // customers can't both "win" the last unit during the payment step.
-                $item->variant->decrement('stock_quantity', $item->quantity);
+                // The WHERE clauses make this a single atomic "decrement iff still
+                // available" statement — the earlier in-memory check above is just a
+                // fast-fail UX nicety and can't be relied on under concurrent requests.
+                $decremented = ProductVariant::where('id', $item->variant->id)
+                    ->where('is_active', true)
+                    ->where('stock_quantity', '>=', $item->quantity)
+                    ->decrement('stock_quantity', $item->quantity);
+
+                if (! $decremented) {
+                    throw ValidationException::withMessages([
+                        'cart' => "{$item->variant->product->name} is no longer available in that quantity.",
+                    ]);
+                }
             }
 
             if ($discountCode) {
@@ -205,7 +218,9 @@ class CheckoutController extends Controller
         $error = null;
 
         if ($discountCodeInput) {
-            $discountCode = DiscountCode::where('code', $discountCodeInput)->first();
+            // Codes are stored uppercased (see Admin\DiscountCodeController) — match
+            // case-insensitively so "save10" works the same as "SAVE10".
+            $discountCode = DiscountCode::where('code', strtoupper($discountCodeInput))->first();
 
             if (! $discountCode || ! $discountCode->isValid()) {
                 $error = 'This discount code is invalid or has expired.';

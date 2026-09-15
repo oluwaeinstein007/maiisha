@@ -16,6 +16,7 @@ RUN apk add --no-cache \
         libpq-dev \
         libzip-dev \
         icu-dev \
+        postgresql16-client \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql \
         bcmath \

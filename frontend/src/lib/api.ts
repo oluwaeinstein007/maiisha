@@ -93,7 +93,26 @@ export const api = {
     request<T>(path, { method: "POST", body: formData, isFormData: true }),
 };
 
+/**
+ * Laravel auto-wraps a lone JsonResource/ResourceCollection returned
+ * directly from a controller as `{ data: ... }` (paginated collections are
+ * the exception — there `data` sits alongside `meta`/`links` and is the
+ * payload shape itself, not a wrapper to unwrap). Use these `*Resource`
+ * variants for single-resource and non-paginated-collection endpoints;
+ * use the plain `api.*` methods for paginated lists and hand-built
+ * `response()->json([...])` payloads, which aren't wrapped.
+ */
+export const apiResource = {
+  get: <T>(path: string, options?: { cache?: RequestCache }) =>
+    api.get<{ data: T }>(path, options).then((r) => r.data),
+  post: <T>(path: string, body?: unknown) => api.post<{ data: T }>(path, body).then((r) => r.data),
+  put: <T>(path: string, body?: unknown) => api.put<{ data: T }>(path, body).then((r) => r.data),
+  patch: <T>(path: string, body?: unknown) => api.patch<{ data: T }>(path, body).then((r) => r.data),
+  delete: <T>(path: string, body?: unknown) => api.delete<{ data: T }>(path, body).then((r) => r.data),
+};
+
 export const swrFetcher = <T>(path: string) => api.get<T>(path);
+export const swrFetcherResource = <T>(path: string) => apiResource.get<T>(path);
 
 export function fieldError(errors: Record<string, string[]> | undefined, field: string): string | undefined {
   return errors?.[field]?.[0];

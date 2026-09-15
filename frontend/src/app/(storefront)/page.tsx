@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { api, buildQuery } from "@/lib/api";
+import { api, apiResource, buildQuery } from "@/lib/api";
 import type { Category, PaginatedResponse, Product } from "@/lib/types";
 import { ProductGrid } from "@/components/product/ProductCard";
 
 async function getCategories(): Promise<Category[]> {
   try {
-    return await api.get<Category[]>("/api/categories");
+    return await apiResource.get<Category[]>("/api/categories");
   } catch {
     return [];
   }

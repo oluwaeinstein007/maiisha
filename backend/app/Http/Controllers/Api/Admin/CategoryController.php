@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -35,6 +36,17 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
+        // products.category_id cascades on delete — without this guard, deleting a
+        // category would silently wipe every product (and their variants/images) in
+        // it, with no way back. Force reassigning/removing products first instead.
+        $productCount = Product::whereIn('category_id', [$category->id, ...$category->children()->pluck('id')])->count();
+
+        if ($productCount > 0) {
+            return response()->json([
+                'message' => "This category still has {$productCount} product(s) assigned to it (including subcategories). Reassign or remove them before deleting the category.",
+            ], 409);
+        }
+
         $category->delete();
 
         return response()->json(['message' => 'Category deleted.']);

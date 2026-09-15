@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
         hostname: apiUrl.hostname,
         port: apiUrl.port,
       },
+      // Seed/demo product photos (backend factories use picsum.photos placeholders).
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+      },
     ],
   },
 };

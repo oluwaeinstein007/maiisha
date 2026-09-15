@@ -50,7 +50,7 @@ class Product extends Model
 
     public function totalStock(): int
     {
-        return $this->variants->sum('stock_quantity');
+        return $this->variants->where('is_active', true)->sum('stock_quantity');
     }
 
     public function inStock(): bool

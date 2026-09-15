@@ -7,13 +7,13 @@ import useSWR from "swr";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { swrFetcher } from "@/lib/api";
+import { swrFetcherResource } from "@/lib/api";
 import type { Category } from "@/lib/types";
 
 export function SiteHeader() {
   const { user } = useAuth();
   const { itemCount } = useCart();
-  const { data: categories } = useSWR<Category[]>("/api/categories", swrFetcher);
+  const { data: categories } = useSWR<Category[]>("/api/categories", swrFetcherResource);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const router = useRouter();

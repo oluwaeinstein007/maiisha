@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import type { Product } from "@/lib/types";
 
 export function ProductDetail({ product }: { product: Product }) {
-  const variants = product.variants ?? [];
+  const variants = useMemo(() => product.variants ?? [], [product.variants]);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(
     variants[0]?.size ?? null,

@@ -118,4 +118,35 @@ class CheckoutTest extends TestCase
             ->postJson('/api/checkout', ['address_id' => $otherUsersAddress->id])
             ->assertForbidden();
     }
+
+    public function test_checkout_rejects_a_variant_deactivated_after_it_was_added_to_the_cart(): void
+    {
+        $user = User::factory()->create();
+        $address = Address::factory()->for($user)->create();
+        $variant = ProductVariant::factory()->create(['stock_quantity' => 5]);
+
+        $this->actingAs($user)->postJson('/api/cart/items', ['product_variant_id' => $variant->id, 'quantity' => 1])
+            ->assertCreated();
+
+        $variant->update(['is_active' => false]);
+
+        $this->actingAs($user)->postJson('/api/checkout', ['address_id' => $address->id])
+            ->assertUnprocessable();
+
+        $this->assertEquals(5, $variant->fresh()->stock_quantity, 'stock must not be touched for a rejected checkout');
+    }
+
+    public function test_a_discount_code_matches_case_insensitively(): void
+    {
+        $user = User::factory()->create();
+        $variant = ProductVariant::factory()->create(['stock_quantity' => 5]);
+        DiscountCode::factory()->create(['code' => 'SAVE10', 'type' => 'percentage', 'value' => 10]);
+
+        $this->actingAs($user)->postJson('/api/cart/items', ['product_variant_id' => $variant->id, 'quantity' => 1]);
+
+        $response = $this->actingAs($user)->postJson('/api/checkout/preview', ['discount_code' => 'save10']);
+
+        $response->assertOk();
+        $this->assertGreaterThan(0, $response->json('discount_pence'));
+    }
 }

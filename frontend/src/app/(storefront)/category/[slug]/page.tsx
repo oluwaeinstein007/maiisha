@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { api, buildQuery } from "@/lib/api";
-import { ApiError } from "@/lib/api";
+import { api, apiResource, ApiError, buildQuery } from "@/lib/api";
 import type { Category, PaginatedResponse, Product } from "@/lib/types";
 import { ProductGrid } from "@/components/product/ProductCard";
 import { ProductFilterBar } from "@/components/product/ProductFilterBar";
@@ -14,7 +13,7 @@ interface CategoryPageProps {
 
 async function getCategory(slug: string): Promise<Category | null> {
   try {
-    return await api.get<Category>(`/api/categories/${slug}`);
+    return await apiResource.get<Category>(`/api/categories/${slug}`);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null;
     throw err;

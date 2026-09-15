@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\DiscountCode;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -63,5 +65,30 @@ class AdminAuthorizationTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseHas('discount_codes', ['id' => $code->id, 'is_active' => false]);
+    }
+
+    public function test_a_percentage_discount_code_cannot_exceed_100(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->postJson('/api/admin/discount-codes', [
+            'code' => 'TOOMUCH',
+            'type' => 'percentage',
+            'value' => 150,
+        ])->assertUnprocessable()->assertJsonValidationErrors('value');
+    }
+
+    public function test_discount_codes_are_stored_uppercased_regardless_of_input_case(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->postJson('/api/admin/discount-codes', [
+            'code' => 'save10',
+            'type' => 'percentage',
+            'value' => 10,
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('discount_codes', ['code' => 'SAVE10']);
+        $this->assertDatabaseMissing('discount_codes', ['code' => 'save10']);
     }
 }

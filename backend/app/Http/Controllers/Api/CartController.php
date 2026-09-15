@@ -27,6 +27,13 @@ class CartController extends Controller
         ]);
 
         $variant = ProductVariant::findOrFail($data['product_variant_id']);
+
+        if (! $variant->is_active) {
+            throw ValidationException::withMessages([
+                'product_variant_id' => 'This item is no longer available.',
+            ]);
+        }
+
         $cart = $this->resolveCart($request);
 
         $item = $cart->items()->where('product_variant_id', $variant->id)->first();

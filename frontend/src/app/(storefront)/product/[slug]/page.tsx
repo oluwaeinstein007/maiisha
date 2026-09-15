@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { api, ApiError } from "@/lib/api";
+import { apiResource, ApiError } from "@/lib/api";
 import type { Product } from "@/lib/types";
 import { ProductDetail } from "@/components/product/ProductDetail";
 
@@ -11,7 +11,7 @@ interface ProductPageProps {
 
 async function getProduct(slug: string): Promise<Product | null> {
   try {
-    return await api.get<Product>(`/api/products/${slug}`);
+    return await apiResource.get<Product>(`/api/products/${slug}`);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null;
     throw err;
