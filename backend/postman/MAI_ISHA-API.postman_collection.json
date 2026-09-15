@@ -18,6 +18,7 @@
     { "key": "cart_item_id", "value": "", "type": "string" },
     { "key": "second_cart_item_id", "value": "", "type": "string" },
     { "key": "address_id", "value": "", "type": "string" },
+    { "key": "address_to_delete_id", "value": "", "type": "string" },
     { "key": "order_id", "value": "", "type": "string" },
     { "key": "reset_token", "value": "", "type": "string", "description": "Paste manually from storage/logs/laravel.log (search 'Reset Password:') after running Auth → Forgot Password." },
     { "key": "admin_category_id", "value": "", "type": "string" },
@@ -1231,6 +1232,345 @@
               "path": ["api", "admin", "products", "{{admin_product_id}}"]
             },
             "description": "Run this last in the folder — deletes the product created above, which then lets '09 - Admin - Categories → Delete Category' succeed if you re-run it."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 - Admin - Orders",
+      "description": "Uses {{order_id}} from '05 - Checkout'. If that stopped at the Stripe placeholder-key step (the expected default), order_id won't be set — see that folder's description for how to proceed anyway.",
+      "item": [
+        {
+          "name": "List Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/orders", "host": ["{{base_url}}"], "path": ["api", "admin", "orders"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Orders (filtered by status)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders?status=pending_payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders"],
+              "query": [
+                { "key": "status", "value": "pending_payment", "description": "placed | processing | shipped | delivered | cancelled | pending_payment" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('order_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: no order_id — see 05 - Checkout', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "{{order_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status → Processing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('order_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: no order_id — see 05 - Checkout', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n    \"status\": \"processing\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+            },
+            "description": "Note: the API doesn't enforce a strict status state-machine (e.g. it won't stop you jumping straight from pending_payment to shipped) — that's intentional, so admins can correct mistakes, but it means Postman can walk the full lifecycle here without needing a real Stripe webhook to fire first."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status → Shipped",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('order_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "    pm.test('Shipment was created', () => pm.expect(pm.response.json().data.shipment).to.not.be.null);",
+                  "} else {",
+                  "    pm.test('Skipped: no order_id — see 05 - Checkout', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n    \"status\": \"shipped\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+            },
+            "description": "Auto-creates a shipment record (via the ShippingProvider interface — a logging stand-in until a real courier aggregator is contracted, per PRD §9) and fires the email+SMS 'shipped' notification (FR-18). Check backend/storage/logs/laravel.log to see both."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status → Delivered",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('order_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: no order_id — see 05 - Checkout', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n    \"status\": \"delivered\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12 - Admin - Discount Codes",
+      "item": [
+        {
+          "name": "List Discount Codes",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/discount-codes", "host": ["{{base_url}}"], "path": ["api", "admin", "discount-codes"] },
+            "description": "Includes a usages_count for each code."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Discount Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const code = pm.response.json();",
+                  "pm.test('Code is stored uppercased', () => pm.expect(code.code).to.eql('SUMMER25'));",
+                  "pm.collectionVariables.set('admin_discount_code_id', code.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"summer25\",\n    \"type\": \"percentage\",\n    \"value\": 25,\n    \"usage_limit\": 100,\n    \"expires_at\": \"2026-12-31 23:59:59\",\n    \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/admin/discount-codes", "host": ["{{base_url}}"], "path": ["api", "admin", "discount-codes"] },
+            "description": "Sent lowercase deliberately — codes are always normalised to uppercase on save, and matched case-insensitively at checkout. `type` is `percentage` (value = percentage points, capped at 100) or `fixed` (value = pence off)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Discount Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes/{{admin_discount_code_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "discount-codes", "{{admin_discount_code_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Discount Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"SUMMER25\",\n    \"type\": \"percentage\",\n    \"value\": 30,\n    \"usage_limit\": 50,\n    \"expires_at\": \"2026-12-31 23:59:59\",\n    \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes/{{admin_discount_code_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "discount-codes", "{{admin_discount_code_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject: Percentage Over 100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Validation error is on value', () => pm.expect(pm.response.json().errors).to.have.property('value'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"TOOGOOD\",\n    \"type\": \"percentage\",\n    \"value\": 150,\n    \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/admin/discount-codes", "host": ["{{base_url}}"], "path": ["api", "admin", "discount-codes"] },
+            "description": "Deliberately invalid — demonstrates the validation guard against a nonsensical >100% discount."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Discount Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Deactivated, not deleted', () => pm.expect(pm.response.json().message).to.include('deactivated'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes/{{admin_discount_code_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "discount-codes", "{{admin_discount_code_id}}"]
+            },
+            "description": "This is a soft-deactivate (is_active → false), never a hard delete — preserves usage history for reporting."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13 - Webhooks (Reference)",
+      "description": "Not directly runnable from Postman — Stripe cryptographically signs every webhook request (see StripeWebhookController), and a hand-crafted Postman request has no way to produce a valid signature for STRIPE_WEBHOOK_SECRET. This request documents the contract instead. To actually exercise it locally, use the Stripe CLI: `stripe listen --forward-to localhost:8000/api/webhooks/stripe`, then `stripe trigger payment_intent.succeeded`.",
+      "item": [
+        {
+          "name": "POST /webhooks/stripe (documentation only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Correctly rejects an unsigned request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"payment_intent.succeeded\",\n    \"data\": { \"object\": { \"id\": \"pi_example\" } }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/webhooks/stripe", "host": ["{{base_url}}"], "path": ["api", "webhooks", "stripe"] },
+            "description": "Sending this as-is (no Stripe-Signature header) correctly gets rejected with 400 'Invalid signature' — that's the expected, secure behaviour being demonstrated, not something to fix. Handled events: `payment_intent.succeeded` (marks the order placed, sends the placed notification) and `payment_intent.payment_failed` (cancels the order, restocks items, removes any discount-code usage record)."
           },
           "response": []
         }
