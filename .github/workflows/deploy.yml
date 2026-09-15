@@ -1,0 +1,28 @@
+name: Deploy
+
+# Stubbed out per PRD §7.2 until the DigitalOcean droplet exists and its
+# secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY) are configured in this
+# repo's settings. Manual trigger only — will not run on every push until
+# it's promoted to a `push: branches: [main]` trigger once the server is
+# provisioned.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to droplet over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /srv/maiisha
+            git pull origin main
+            docker compose pull
+            docker compose up -d --build
+            docker compose exec -T backend php artisan migrate --force

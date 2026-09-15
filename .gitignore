@@ -1,0 +1,16 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+/.idea
+/.vscode
+/.zed
+/.cursor/
+/.nova
+/.codex
+
+# Docker
+docker/data/
+*.env.local.docker
+
+# Root-level env (for docker-compose)
+.env

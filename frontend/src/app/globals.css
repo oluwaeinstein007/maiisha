@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #111111;
+
+  /* Brand — MAI_ISHA black & gold */
+  --color-ink: #0b0b0c;
+  --color-ink-soft: #1c1b1a;
+  --color-gold: #c8a24a;
+  --color-gold-soft: #e6d3a3;
+  --color-cream: #faf7f0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-gold: var(--color-gold);
+  --color-gold-soft: var(--color-gold-soft);
+  --color-cream: var(--color-cream);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: var(--color-gold-soft);
+  color: var(--color-ink);
+}
