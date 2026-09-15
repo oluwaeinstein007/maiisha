@@ -1,0 +1,23 @@
+# Local-dev override: builds backend images with dev Composer dependencies
+# (fakerphp/faker, Pail, Boost, ...) so `php artisan db:seed` works.
+#
+# Not auto-loaded by plain `docker compose ...` — opt in explicitly:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+# Deploy (deploy.yml) and any bare `docker compose` invocation only read
+# docker-compose.yml, so production images stay --no-dev.
+services:
+  backend:
+    build:
+      args:
+        VENDOR_STAGE: vendor-dev
+
+  queue:
+    build:
+      args:
+        VENDOR_STAGE: vendor-dev
+
+  scheduler:
+    build:
+      args:
+        VENDOR_STAGE: vendor-dev

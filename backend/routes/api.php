@@ -27,14 +27,21 @@ Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 
-Route::get('/cart', [CartController::class, 'show']);
-Route::post('/cart/items', [CartController::class, 'store']);
-Route::patch('/cart/items/{item}', [CartController::class, 'update']);
-Route::delete('/cart/items/{item}', [CartController::class, 'destroy']);
+// Guest carts are session-keyed (CartController::resolveCart) — same
+// no-Origin/no-session crash risk as the auth routes below, guarded the same way.
+Route::middleware('stateful.session')->group(function () {
+    Route::get('/cart', [CartController::class, 'show']);
+    Route::post('/cart/items', [CartController::class, 'store']);
+    Route::patch('/cart/items/{item}', [CartController::class, 'update']);
+    Route::delete('/cart/items/{item}', [CartController::class, 'destroy']);
+});
 
 // Tighter, purpose-specific limits on top of the general "api" throttle — these
 // are the classic brute-force/enumeration/spam targets (OWASP A07, NFR-1).
-Route::middleware('throttle:auth-attempts')->group(function () {
+// "stateful.session" turns a request with no matching Origin/Referer (any
+// non-browser caller — curl, a bot, a bare API client) into a clean 400
+// instead of an unhandled 500 from $request->session() having nothing to call.
+Route::middleware(['throttle:auth-attempts', 'stateful.session'])->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
@@ -53,7 +60,7 @@ Route::withoutMiddleware('throttle:api')
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user());
-    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('stateful.session');
     Route::put('/auth/password', [AuthController::class, 'updatePassword']);
 
     Route::apiResource('addresses', AddressController::class)->except(['show']);

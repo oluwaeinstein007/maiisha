@@ -28,9 +28,10 @@ The app is then reachable at `http://localhost:8080` (nginx routes `/api`, `/up`
 
 Storefront: `http://localhost:8080/` — Admin dashboard: `http://localhost:8080/admin`
 
-To seed demo data (categories, products, a discount code, and two accounts):
+To seed demo data (categories, products, a discount code, an admin + demo customer account, 10 realistic customers with addresses, and a spread of orders across the order lifecycle): the backend image is built with `composer install --no-dev`, so `fakerphp/faker` (used by `UserFactory`) isn't in it by default. Rebuild with the dev override first, which installs dev dependencies for `backend`/`queue`/`scheduler`:
 
 ```sh
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 docker compose exec backend php artisan db:seed
 ```
 
@@ -38,6 +39,8 @@ docker compose exec backend php artisan db:seed
 |----------|-------------------------|------------|
 | Admin    | `admin@maiisha.test`    | `password` |
 | Customer | `customer@maiisha.test` | `password` |
+
+(Seeded customers in `CustomerSeeder` also use `password` — see that file for their emails.)
 
 ## Running locally without Docker
 

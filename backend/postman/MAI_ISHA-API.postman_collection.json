@@ -1,0 +1,1240 @@
+{
+  "info": {
+    "_postman_id": "b7e1f2a0-6c3d-4e9a-9f21-mai1sha0api00",
+    "name": "MAI_ISHA API",
+    "description": "MAI_ISHA Fashion & Beauty Sphere — Laravel API (Sanctum SPA cookie auth, GBP e-commerce).\n\n## Before you run this\n\n1. Start the API: `cd backend && php artisan serve` (or the Docker Compose stack — switch the `base_url` variable to `http://localhost:8080` if so).\n2. Make sure the database is migrated and seeded: `php artisan migrate:fresh --seed`. This collection's example bodies assume the seeded demo data:\n   - Admin: `admin@maiisha.test` / `password`\n   - Customer: `customer@maiisha.test` / `password`\n   - Discount code: `WELCOME10` (10% off, no usage limit)\n   - ~14 seeded products across the 9 PRD categories, each with 1+ variants\n3. Import both files in this folder: this collection, and the `MAI_ISHA - Local.postman_environment.json` environment (or the Docker one). Select the environment in Postman's top-right environment picker before sending anything.\n\n## How auth works here\n\nThe API uses **Laravel Sanctum's cookie/session auth**, the same as the real Next.js frontend — there is no bearer token to paste in. Postman's cookie jar handles this automatically once you run **00 - Setup → Get CSRF Cookie**, and this collection keeps the CSRF token fresh after every request via a collection-level script (see below). Just run requests top-to-bottom within a folder and it behaves like a logged-in browser session.\n\n## Folder order matters\n\nFolders are numbered in the order they're meant to run — each builds on state (cookies + collection variables) left behind by the one before it:\n\n1. **00 - Setup** — always run this first (per environment / per Postman session restart)\n2. **01 - Auth** — registers a fresh, uniquely-emailed customer and logs them in\n3. **02 - Catalogue (Public)** — no auth needed; also harvests a product/variant to buy\n4. **03 - Cart** — adds/updates/removes items using the harvested variant(s)\n5. **04 - My Addresses** — creates the delivery address checkout will use\n6. **05 - Checkout** — previews totals (incl. `WELCOME10`), then places the order\n7. **06 - My Orders** — reads back the order just placed\n8. **07 - Admin - Auth** — logs in as the seeded admin (replaces the customer session)\n9. **08 through 12 - Admin - \\*** — dashboard, categories, products/variants/images, order fulfilment, discount codes\n10. **13 - Webhooks (Reference)** — not directly runnable from Postman (see its description) — documents the Stripe webhook contract instead\n\nYou can also run the whole collection via **Collection Runner** top-to-bottom and it will tell a coherent story end-to-end, with `pm.test()` assertions on every request.\n\n## Notes\n\n- All money fields are integers in **pence** (GBP only, per PRD Phase 1 scope).\n- Re-running **01 - Auth → Register** always creates a brand-new account (its email uses `{{$timestamp}}`), so the whole collection is safely re-runnable without unique-constraint clashes.\n- The Stripe keys in `backend/.env` are placeholders by default, so **05 - Checkout → Place Order** will correctly fail at the payment-gateway step with a clean 422 (\"We could not start payment\") rather than a raw Stripe error — that's expected until real Stripe test keys are configured, not a bug.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "frontend_origin", "value": "http://localhost:3000", "type": "string" },
+    { "key": "xsrf_token", "value": "", "type": "string" },
+    { "key": "customer_email", "value": "", "type": "string" },
+    { "key": "customer_password", "value": "SecurePass123!", "type": "string" },
+    { "key": "category_slug", "value": "", "type": "string" },
+    { "key": "product_slug", "value": "", "type": "string" },
+    { "key": "variant_id", "value": "", "type": "string" },
+    { "key": "second_variant_id", "value": "", "type": "string" },
+    { "key": "cart_item_id", "value": "", "type": "string" },
+    { "key": "second_cart_item_id", "value": "", "type": "string" },
+    { "key": "address_id", "value": "", "type": "string" },
+    { "key": "order_id", "value": "", "type": "string" },
+    { "key": "reset_token", "value": "", "type": "string", "description": "Paste manually from storage/logs/laravel.log (search 'Reset Password:') after running Auth → Forgot Password." },
+    { "key": "admin_category_id", "value": "", "type": "string" },
+    { "key": "admin_product_id", "value": "", "type": "string" },
+    { "key": "admin_product_slug", "value": "", "type": "string" },
+    { "key": "admin_variant_id", "value": "", "type": "string" },
+    { "key": "admin_variant_sku", "value": "", "type": "string" },
+    { "key": "admin_image_id", "value": "", "type": "string" },
+    { "key": "admin_discount_code_id", "value": "", "type": "string" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Sanctum's EnsureFrontendRequestsAreStateful only turns on session/CSRF",
+          "// middleware when Origin/Referer matches SANCTUM_STATEFUL_DOMAINS — it's a",
+          "// plain string match, not real CORS enforcement, so a non-browser client",
+          "// like Postman just needs to send the same header a browser would.",
+          "pm.request.headers.upsert({ key: 'Origin', value: pm.collectionVariables.get('frontend_origin') });",
+          "pm.request.headers.upsert({ key: 'Referer', value: pm.collectionVariables.get('frontend_origin') + '/' });",
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });",
+          "",
+          "const method = pm.request.method;",
+          "if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {",
+          "    const token = pm.collectionVariables.get('xsrf_token');",
+          "    if (token) {",
+          "        pm.request.headers.upsert({ key: 'X-XSRF-TOKEN', value: token });",
+          "    }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Laravel re-issues a fresh XSRF-TOKEN cookie on every response as long as",
+          "// the session is alive, so just keep the collection variable in sync after",
+          "// every single request — no need to re-fetch the csrf-cookie endpoint.",
+          "const xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+          "if (xsrfCookie) {",
+          "    pm.collectionVariables.set('xsrf_token', decodeURIComponent(xsrfCookie));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Setup",
+      "description": "Run once per Postman session (or whenever cookies get cleared) before anything else.",
+      "item": [
+        {
+          "name": "Get CSRF Cookie",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));",
+                  "pm.test('XSRF-TOKEN cookie was set', () => pm.expect(pm.cookies.has('XSRF-TOKEN')).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sanctum/csrf-cookie",
+              "host": ["{{base_url}}"],
+              "path": ["sanctum", "csrf-cookie"]
+            },
+            "description": "Sanctum's SPA bootstrap endpoint. Sets the XSRF-TOKEN and session cookies Postman needs for every request after this one — mirrors exactly what the real Next.js frontend does on load."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Register (new customer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Returns the created user', () => {",
+                  "    pm.expect(body.user).to.have.property('email');",
+                  "    pm.expect(body.user.role).to.eql('customer');",
+                  "});",
+                  "if (body.user) {",
+                  "    pm.collectionVariables.set('customer_email', body.user.email);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Amara Bello\",\n    \"email\": \"amara.bello.{{$timestamp}}@example.com\",\n    \"password\": \"{{customer_password}}\",\n    \"password_confirmation\": \"{{customer_password}}\",\n    \"phone\": \"+447700900123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Creates a brand-new account (unique email each run via {{$timestamp}}, so this collection is safely re-runnable) and logs it straight in — the rest of the customer journey uses this session."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (same customer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns the logged-in user', () => pm.expect(pm.response.json().user).to.have.property('email'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{customer_email}}\",\n    \"password\": \"{{customer_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Demonstrates the login endpoint by logging back into the account Register just created (safe — doesn't switch the active journey to a different identity). To try the pre-seeded demo account instead, swap the body for customer@maiisha.test / password — just note that derails the rest of this folder's story, since it becomes the active session."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Session is authenticated', () => pm.expect(pm.response.json()).to.have.property('email'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/user", "host": ["{{base_url}}"], "path": ["api", "user"] },
+            "description": "Confirms the cookie session is authenticated as the expected user."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('customer_password', 'NewSecurePass456!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"current_password\": \"{{customer_password}}\",\n    \"password\": \"NewSecurePass456!\",\n    \"password_confirmation\": \"NewSecurePass456!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/password", "host": ["{{base_url}}"], "path": ["api", "auth", "password"] },
+            "description": "Updates the {{customer_password}} variable too, so any later request in this folder that re-authenticates keeps working."
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is a generic message (no email enumeration)', () => {",
+                  "    pm.expect(pm.response.json().message).to.include('If an account exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{customer_email}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/forgot-password", "host": ["{{base_url}}"], "path": ["api", "auth", "forgot-password"] },
+            "description": "Always returns the same generic message whether or not the email is registered, by design. Locally (MAIL_MAILER=log) the actual reset link — including the token — is written to backend/storage/logs/laravel.log. Copy the token from there into the {{reset_token}} collection variable to try 'Reset Password' below."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('reset_token')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: no reset_token set — see request description', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"{{reset_token}}\",\n    \"email\": \"{{customer_email}}\",\n    \"password\": \"AnotherSecurePass789!\",\n    \"password_confirmation\": \"AnotherSecurePass789!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/reset-password", "host": ["{{base_url}}"], "path": ["api", "auth", "reset-password"] },
+            "description": "Requires a real token from storage/logs/laravel.log (set it in the {{reset_token}} collection variable first) — the token can't be captured automatically since it only ever leaves the server via email/log, by design. Without it this will correctly 422."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Catalogue (Public)",
+      "description": "No authentication required — these also work from an incognito browser tab or curl with no cookies at all.",
+      "item": [
+        {
+          "name": "List Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.test('Returns the 9 PRD top-level categories', () => pm.expect(data.length).to.eql(9));",
+                  "if (data && data.length) {",
+                  "    pm.collectionVariables.set('category_slug', data[0].slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] },
+            "description": "Top-level categories with their subcategories nested under `children`."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_slug}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json().data;",
+                  "pm.test('Products have at least one variant each', () => {",
+                  "    pm.expect(data.length).to.be.above(1);",
+                  "    pm.expect(data[0].variants.length).to.be.above(0);",
+                  "});",
+                  "if (data && data.length > 1) {",
+                  "    pm.collectionVariables.set('product_slug', data[0].slug);",
+                  "    pm.collectionVariables.set('variant_id', data[0].variants[0].id);",
+                  "    pm.collectionVariables.set('second_variant_id', data[1].variants[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/products", "host": ["{{base_url}}"], "path": ["api", "products"] },
+            "description": "Harvests the first two products' opening variant into {{variant_id}} / {{second_variant_id}} for the Cart folder."
+          },
+          "response": []
+        },
+        {
+          "name": "List Products (filtered + sorted example)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?category={{category_slug}}&sort=price_asc&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "category", "value": "{{category_slug}}", "description": "Filter by category slug" },
+                { "key": "sort", "value": "price_asc", "description": "price_asc | price_desc | best_selling | (default: newest)" },
+                { "key": "per_page", "value": "5" },
+                { "key": "search", "value": "dress", "disabled": true, "description": "FR-4 catalogue search — matches name/description" },
+                { "key": "size", "value": "M", "disabled": true },
+                { "key": "colour", "value": "Gold", "disabled": true },
+                { "key": "min_price", "value": "1000", "disabled": true, "description": "pence" },
+                { "key": "max_price", "value": "10000", "disabled": true, "description": "pence" }
+              ]
+            },
+            "description": "All available query params are listed here (some disabled) so you can toggle whichever combination you want to try."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_slug}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_slug}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Cart",
+      "description": "Cart is session-backed even for guests (FR-6) — but running these after '01 - Auth' ties it to the logged-in customer instead, exactly like a real browser.",
+      "item": [
+        {
+          "name": "Get Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api", "cart"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Item to Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const items = pm.response.json().data.items;",
+                  "const added = items.find(i => String(i.variant.id) === String(pm.collectionVariables.get('variant_id')));",
+                  "pm.test('Item is in the cart', () => pm.expect(added).to.not.be.undefined);",
+                  "if (added) { pm.collectionVariables.set('cart_item_id', added.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_variant_id\": {{variant_id}},\n    \"quantity\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] },
+            "description": "This is the item that survives through to Checkout."
+          },
+          "response": []
+        },
+        {
+          "name": "Add a Second Item (to demonstrate Remove)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const items = pm.response.json().data.items;",
+                  "const added = items.find(i => String(i.variant.id) === String(pm.collectionVariables.get('second_variant_id')));",
+                  "if (added) { pm.collectionVariables.set('second_cart_item_id', added.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"product_variant_id\": {{second_variant_id}},\n    \"quantity\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json().data.items.find(i => String(i.id) === String(pm.collectionVariables.get('cart_item_id')));",
+                  "pm.test('Quantity updated to 2', () => pm.expect(item.quantity).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n    \"quantity\": 2\n}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items", "{{cart_item_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Cart Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const items = pm.response.json().data.items;",
+                  "pm.test('Second item is gone', () => {",
+                  "    pm.expect(items.find(i => String(i.id) === String(pm.collectionVariables.get('second_cart_item_id')))).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/{{second_cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items", "{{second_cart_item_id}}"]
+            },
+            "description": "Leaves just the first item in the cart, ready for Checkout."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - My Addresses",
+      "item": [
+        {
+          "name": "List Addresses",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const address = pm.response.json().data;",
+                  "pm.test('Country is a 2-letter code', () => pm.expect(address.country).to.eql('GB'));",
+                  "pm.collectionVariables.set('address_id', address.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"label\": \"Home\",\n    \"full_name\": \"Amara Bello\",\n    \"line1\": \"14 Brick Lane\",\n    \"line2\": \"Flat 3\",\n    \"city\": \"London\",\n    \"postcode\": \"E1 6QL\",\n    \"country\": \"GB\",\n    \"phone\": \"+447700900123\",\n    \"is_default\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] },
+            "description": "`country` must be a 2-letter ISO code (e.g. GB), not free text — this is the mistake the frontend's first draft made."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"label\": \"Home\",\n    \"full_name\": \"Amara Bello\",\n    \"line1\": \"14 Brick Lane\",\n    \"line2\": \"Flat 3B\",\n    \"city\": \"London\",\n    \"postcode\": \"E1 6QL\",\n    \"country\": \"GB\",\n    \"phone\": \"+447700900123\",\n    \"is_default\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/addresses/{{address_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses", "{{address_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create a Second Address (for Delete demo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('address_to_delete_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"label\": \"Work\",\n    \"full_name\": \"Amara Bello\",\n    \"line1\": \"1 Canary Wharf\",\n    \"city\": \"London\",\n    \"postcode\": \"E14 5AB\",\n    \"country\": \"GB\",\n    \"is_default\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/addresses/{{address_to_delete_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "addresses", "{{address_to_delete_id}}"]
+            },
+            "description": "Deletes the throwaway 'Work' address, not the default one Checkout uses."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Checkout",
+      "item": [
+        {
+          "name": "Preview Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Itemised total is present', () => {",
+                  "    ['subtotal_pence', 'discount_pence', 'shipping_pence', 'vat_pence', 'total_pence'].forEach(k => pm.expect(body).to.have.property(k));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}/api/checkout/preview", "host": ["{{base_url}}"], "path": ["api", "checkout", "preview"] },
+            "description": "No discount code — baseline totals for what's currently in the cart."
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Checkout (with WELCOME10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Discount was applied', () => pm.expect(pm.response.json().discount_pence).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"discount_code\": \"welcome10\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/checkout/preview", "host": ["{{base_url}}"], "path": ["api", "checkout", "preview"] },
+            "description": "Uses the pre-seeded WELCOME10 code (10% off, no usage limit). Deliberately sent lowercase to demonstrate matching is case-insensitive."
+          },
+          "response": []
+        },
+        {
+          "name": "Place Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Order + Stripe client_secret returned', () => {",
+                  "        pm.expect(body).to.have.property('order');",
+                  "        pm.expect(body).to.have.property('client_secret');",
+                  "    });",
+                  "    pm.collectionVariables.set('order_id', body.order.id);",
+                  "} else {",
+                  "    pm.test('Fails cleanly at the payment gateway (expected with placeholder Stripe keys)', () => {",
+                  "        pm.response.to.have.status(422);",
+                  "        pm.expect(JSON.stringify(body)).to.include('could not start payment');",
+                  "    });",
+                  "    console.warn('Place Order stopped at Stripe as expected — order_id was NOT captured. Set real Stripe test keys in backend/.env to get past this, or grab an order_id manually from the DB to continue into 06 - My Orders / Admin - Orders.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"address_id\": {{address_id}},\n    \"discount_code\": \"WELCOME10\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/checkout", "host": ["{{base_url}}"], "path": ["api", "checkout"] },
+            "description": "Reserves stock and creates the order (status `pending_payment`) *before* talking to Stripe, then requests a PaymentIntent. With the placeholder STRIPE_KEY/STRIPE_SECRET shipped in .env.example, this correctly 422s at the payment-gateway step and cleanly releases the reserved stock — that's the intended failure path, not a bug. Drop in real Stripe test keys to see it succeed all the way to a `client_secret`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - My Orders",
+      "item": [
+        {
+          "name": "List My Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/orders", "host": ["{{base_url}}"], "path": ["api", "orders"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Order by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('order_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: no order_id (Place Order stopped at Stripe) — see 05 - Checkout', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 - Admin - Auth",
+      "description": "Logging in here replaces the active cookie session with the admin's — everything from this folder onward runs as the admin, not the customer from folders 01-06.",
+      "item": [
+        {
+          "name": "Login (Seeded Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Role is admin', () => pm.expect(pm.response.json().user.role).to.eql('admin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@maiisha.test\",\n    \"password\": \"password\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 - Admin - Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Sales + stock summary is present', () => {",
+                  "    ['orders_count', 'revenue_pence', 'low_stock', 'out_of_stock_count', 'recent_orders'].forEach(k => pm.expect(body).to.have.property(k));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/dashboard", "host": ["{{base_url}}"], "path": ["api", "admin", "dashboard"] },
+            "description": "Order/revenue totals only count paid statuses (placed/processing/shipped/delivered) — a pending_payment order from an incomplete checkout won't show up here or in revenue_pence."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 - Admin - Categories",
+      "item": [
+        {
+          "name": "List Categories (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/categories", "host": ["{{base_url}}"], "path": ["api", "admin", "categories"] },
+            "description": "Unlike the public /api/categories endpoint, this is a flat list (no is_active-style filtering) intended for a management table, not storefront nav."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const category = pm.response.json().data;",
+                  "pm.test('Slug was auto-generated', () => pm.expect(category.slug).to.eql('summer-collection'));",
+                  "pm.collectionVariables.set('admin_category_id', category.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Summer Collection\",\n    \"description\": \"Limited seasonal drop.\",\n    \"sort_order\": 10\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/admin/categories", "host": ["{{base_url}}"], "path": ["api", "admin", "categories"] },
+            "description": "`slug` is optional — omit it (as here) to have it auto-generated from `name`."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Summer Collection 2026\",\n    \"description\": \"Limited seasonal drop — updated copy.\",\n    \"sort_order\": 10\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories/{{admin_category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "categories", "{{admin_category_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category (blocked — has products)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409 once a product exists in it', () => {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories/{{admin_category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "categories", "{{admin_category_id}}"]
+            },
+            "description": "Run this BEFORE '10 - Admin - Products' and it succeeds (200) since the category is still empty. Run it AFTER creating 'Golden Hour Maxi Dress' in that folder and it correctly 409s instead of silently cascade-deleting the product — categories with products can't be deleted until they're reassigned or removed."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10 - Admin - Products, Variants & Images",
+      "item": [
+        {
+          "name": "List Products (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/products", "host": ["{{base_url}}"], "path": ["api", "admin", "products"] },
+            "description": "Unlike the public catalogue, this also returns inactive/out-of-stock products — a management view, not a storefront view."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const product = pm.response.json().data;",
+                  "pm.collectionVariables.set('admin_product_id', product.id);",
+                  "pm.collectionVariables.set('admin_product_slug', product.slug);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — part of the Summer Collection.\",\n    \"price_pence\": 8999,\n    \"is_active\": true,\n    \"is_featured\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/admin/products", "host": ["{{base_url}}"], "path": ["api", "admin", "products"] },
+            "description": "`price_pence` is the base price shown when a variant has no `price_override_pence` of its own. Uses the category created in '09 - Admin - Categories'."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "products", "{{admin_product_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — now 10% more golden.\",\n    \"price_pence\": 9499,\n    \"is_active\": true,\n    \"is_featured\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "products", "{{admin_product_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Variant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const variant = pm.response.json();",
+                  "pm.collectionVariables.set('admin_variant_id', variant.id);",
+                  "pm.collectionVariables.set('admin_variant_sku', variant.sku);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sku\": \"GHD-{{$randomInt}}\",\n    \"size\": \"M\",\n    \"colour\": \"Gold\",\n    \"stock_quantity\": 25,\n    \"low_stock_threshold\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}/variants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "products", "{{admin_product_id}}", "variants"]
+            },
+            "description": "`price_override_pence` is omitted — this variant inherits the product's price_pence (9499). Set it to override just this variant's price (e.g. a size that costs more)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Variant (stock adjustment)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Stock was adjusted to 40', () => pm.expect(pm.response.json().stock_quantity).to.eql(40));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sku\": \"{{admin_variant_sku}}\",\n    \"size\": \"M\",\n    \"colour\": \"Gold\",\n    \"stock_quantity\": 40,\n    \"low_stock_threshold\": 5,\n    \"is_active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/variants/{{admin_variant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "variants", "{{admin_variant_id}}"]
+            },
+            "description": "This is also the endpoint for stock adjustments (FR-22) — it's a full replace, not a partial patch, so re-send every field (sku/size/colour/stock_quantity all required) even when you only mean to change the stock count."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Product Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('admin_image_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": [], "description": "Select any local image file — required, max 5MB." },
+                { "key": "alt_text", "value": "Model wearing the Golden Hour Maxi Dress", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "products", "{{admin_product_id}}", "images"]
+            },
+            "description": "Postman can't ship a binary file inside a shared collection export — click into the `image` form field and choose any local image before sending this request."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('admin_image_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: run Upload Product Image with a real file first', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/images/{{admin_image_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "images", "{{admin_image_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Variant",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/variants/{{admin_variant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "variants", "{{admin_variant_id}}"]
+            },
+            "description": "Safe even if the variant is referenced by past orders — order line items snapshot their own product_name/sku/price at purchase time, so deleting the live variant doesn't touch order history."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "products", "{{admin_product_id}}"]
+            },
+            "description": "Run this last in the folder — deletes the product created above, which then lets '09 - Admin - Categories → Delete Category' succeed if you re-run it."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

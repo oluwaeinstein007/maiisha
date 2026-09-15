@@ -39,5 +39,10 @@ class DatabaseSeeder extends Seeder
             'usage_limit' => null,
             'is_active' => true,
         ]);
+
+        $this->call([
+            CustomerSeeder::class,
+            OrderSeeder::class,
+        ]);
     }
 }
