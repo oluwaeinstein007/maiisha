@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import useSWR from "swr";
-import { api, swrFetcher } from "@/lib/api";
+import { apiResource, swrFetcherResource } from "@/lib/api";
 import type { Cart } from "@/lib/types";
 
 interface CartContextValue {
@@ -18,11 +18,11 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { data: cart, isLoading, mutate } = useSWR<Cart>("/api/cart", swrFetcher);
+  const { data: cart, isLoading, mutate } = useSWR<Cart>("/api/cart", swrFetcherResource);
 
   const addItem = useCallback(
     async (productVariantId: number, quantity: number) => {
-      const updated = await api.post<Cart>("/api/cart/items", {
+      const updated = await apiResource.post<Cart>("/api/cart/items", {
         product_variant_id: productVariantId,
         quantity,
       });
@@ -33,7 +33,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateItem = useCallback(
     async (itemId: number, quantity: number) => {
-      const updated = await api.patch<Cart>(`/api/cart/items/${itemId}`, { quantity });
+      const updated = await apiResource.patch<Cart>(`/api/cart/items/${itemId}`, { quantity });
       await mutate(updated, false);
     },
     [mutate],
@@ -41,7 +41,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = useCallback(
     async (itemId: number) => {
-      const updated = await api.delete<Cart>(`/api/cart/items/${itemId}`);
+      const updated = await apiResource.delete<Cart>(`/api/cart/items/${itemId}`);
       await mutate(updated, false);
     },
     [mutate],

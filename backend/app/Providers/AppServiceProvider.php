@@ -9,6 +9,9 @@ use App\Services\LogShippingProvider;
 use App\Services\LogSmsProvider;
 use App\Services\StripePaymentGateway;
 use App\Services\VatCalculator;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Stripe\StripeClient;
 
@@ -37,6 +40,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // General API baseline (NFR-1: standard OWASP protections). Auth-sensitive
+        // routes layer a tighter, purpose-specific limit on top (see routes/api.php).
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('auth-attempts', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('password-reset', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip());
+        });
     }
 }

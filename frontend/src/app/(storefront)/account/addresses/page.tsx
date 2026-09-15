@@ -3,13 +3,13 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Pencil, Star, Trash2 } from "lucide-react";
-import { api, swrFetcher } from "@/lib/api";
+import { api, swrFetcherResource } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { AddressForm } from "@/components/account/AddressForm";
 import type { Address } from "@/lib/types";
 
 export default function AddressesPage() {
-  const { data: addresses, mutate } = useSWR<Address[]>("/api/addresses", swrFetcher);
+  const { data: addresses, mutate } = useSWR<Address[]>("/api/addresses", swrFetcherResource);
   const [editing, setEditing] = useState<Address | "new" | null>(null);
 
   const handleDelete = async (id: number) => {

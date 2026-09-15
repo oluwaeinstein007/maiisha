@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { swrFetcher } from "@/lib/api";
+import { swrFetcherResource } from "@/lib/api";
 import { formatDate, formatPence } from "@/lib/money";
 import { OrderStatusTimeline } from "@/components/order/OrderStatusTimeline";
 import type { Order } from "@/lib/types";
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const { data: order, error } = useSWR<Order>(`/api/orders/${params.id}`, swrFetcher);
+  const { data: order, error } = useSWR<Order>(`/api/orders/${params.id}`, swrFetcherResource);
 
   if (error) {
     return <p className="text-sm text-red-600">Could not load this order.</p>;

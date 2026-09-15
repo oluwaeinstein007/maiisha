@@ -3,13 +3,13 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { api, swrFetcher } from "@/lib/api";
+import { api, swrFetcherResource } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { CategoryForm } from "@/components/admin/CategoryForm";
 import type { Category } from "@/lib/types";
 
 export default function AdminCategoriesPage() {
-  const { data: categories, mutate } = useSWR<Category[]>("/api/categories", swrFetcher);
+  const { data: categories, mutate } = useSWR<Category[]>("/api/categories", swrFetcherResource);
   const [editing, setEditing] = useState<Category | "new" | null>(null);
 
   const handleDelete = async (id: number) => {

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { swrFetcher } from "@/lib/api";
+import { swrFetcherResource } from "@/lib/api";
 import { ProductBasicForm } from "@/components/admin/ProductBasicForm";
 import { VariantsManager } from "@/components/admin/VariantsManager";
 import { ImagesManager } from "@/components/admin/ImagesManager";

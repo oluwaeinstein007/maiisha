@@ -44,6 +44,28 @@ class AdminAuthorizationTest extends TestCase
         $this->assertDatabaseHas('categories', ['name' => 'New Arrivals', 'slug' => 'new-arrivals']);
     }
 
+    public function test_deleting_a_category_with_products_is_blocked(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $category = Category::factory()->create();
+        Product::factory()->for($category)->create();
+
+        $response = $this->actingAs($admin)->deleteJson("/api/admin/categories/{$category->id}");
+
+        $response->assertStatus(409);
+        $this->assertDatabaseHas('categories', ['id' => $category->id]);
+    }
+
+    public function test_an_empty_category_can_be_deleted(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $category = Category::factory()->create();
+
+        $this->actingAs($admin)->deleteJson("/api/admin/categories/{$category->id}")->assertOk();
+
+        $this->assertDatabaseMissing('categories', ['id' => $category->id]);
+    }
+
     public function test_a_customer_cannot_create_categories(): void
     {
         $customer = User::factory()->create(['role' => 'customer']);

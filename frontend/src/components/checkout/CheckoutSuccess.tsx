@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { CheckCircle2 } from "lucide-react";
-import { swrFetcher } from "@/lib/api";
+import { swrFetcherResource } from "@/lib/api";
 import { formatPence } from "@/lib/money";
 import { Button } from "@/components/ui/Button";
 import type { Order } from "@/lib/types";
@@ -12,7 +12,7 @@ import type { Order } from "@/lib/types";
 export function CheckoutSuccess() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order");
-  const { data: order } = useSWR<Order>(orderId ? `/api/orders/${orderId}` : null, swrFetcher);
+  const { data: order } = useSWR<Order>(orderId ? `/api/orders/${orderId}` : null, swrFetcherResource);
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col items-center justify-center px-4 py-16 text-center sm:px-6">

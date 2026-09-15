@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { swrFetcher } from "@/lib/api";
+import { swrFetcherResource } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { AddressForm } from "@/components/account/AddressForm";
 import type { Address } from "@/lib/types";
@@ -13,7 +13,7 @@ interface AddressSelectorProps {
 }
 
 export function AddressSelector({ selectedId, onSelect }: AddressSelectorProps) {
-  const { data: addresses, mutate } = useSWR<Address[]>("/api/addresses", swrFetcher);
+  const { data: addresses, mutate } = useSWR<Address[]>("/api/addresses", swrFetcherResource);
   const [addingNew, setAddingNew] = useState(false);
 
   if (!addresses) {
