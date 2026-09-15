@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import useSWR from "swr";
-import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { Menu, ShoppingBag, User, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { swrFetcherResource } from "@/lib/api";
+import { SearchBox } from "@/components/layout/SearchBox";
 import type { Category } from "@/lib/types";
 
 export function SiteHeader() {
@@ -15,16 +15,6 @@ export function SiteHeader() {
   const { itemCount } = useCart();
   const { data: categories } = useSWR<Category[]>("/api/categories", swrFetcherResource);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const router = useRouter();
-
-  const handleSearch = (event: FormEvent) => {
-    event.preventDefault();
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-      setMenuOpen(false);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/10 bg-cream/95 backdrop-blur">
@@ -56,18 +46,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <form
-          onSubmit={handleSearch}
-          className="hidden md:flex items-center flex-1 max-w-sm ml-auto border border-ink/15 rounded-full px-3 py-1.5 bg-white focus-within:border-gold transition-colors"
-        >
-          <Search size={16} className="text-ink-soft shrink-0" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products…"
-            className="w-full bg-transparent px-2 text-sm outline-none placeholder:text-ink-soft/60"
-          />
-        </form>
+        <SearchBox className="hidden md:block flex-1 max-w-sm ml-auto" />
 
         <div className="flex items-center gap-4 ml-auto md:ml-4">
           <Link
@@ -94,15 +73,7 @@ export function SiteHeader() {
 
       {menuOpen && (
         <div className="lg:hidden border-t border-ink/10 bg-cream px-4 py-4 space-y-4">
-          <form onSubmit={handleSearch} className="flex items-center border border-ink/15 rounded-full px-3 py-1.5 bg-white">
-            <Search size={16} className="text-ink-soft shrink-0" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search products…"
-              className="w-full bg-transparent px-2 text-sm outline-none"
-            />
-          </form>
+          <SearchBox onNavigate={() => setMenuOpen(false)} />
           <nav className="flex flex-col gap-3">
             {categories?.map((category) => (
               <Link
