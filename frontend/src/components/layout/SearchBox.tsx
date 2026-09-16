@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import useSWR from "swr";
-import { Search } from "lucide-react";
+import { Search, SearchX } from "lucide-react";
 import { api, buildQuery } from "@/lib/api";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { formatPence } from "@/lib/money";
@@ -59,7 +59,7 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
     <div ref={containerRef} className={`relative ${className ?? ""}`}>
       <form
         onSubmit={handleSubmit}
-        className="flex items-center border border-ink/15 rounded-full px-3 py-1.5 bg-white focus-within:border-gold transition-colors"
+        className="flex min-w-0 items-center rounded-full border border-ink/15 bg-white px-3.5 py-2 transition-colors focus-within:border-gold"
       >
         <Search size={16} className="text-ink-soft shrink-0" />
         <input
@@ -76,9 +76,12 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
       </form>
 
       {open && debouncedQuery.length >= 2 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-lg border border-ink/10 bg-white shadow-lg">
+        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[300px] overflow-hidden rounded-xl border border-ink/10 bg-white shadow-xl">
           {isLoading ? (
-            <p className="px-4 py-3 text-xs text-ink-soft">Searching…</p>
+            <div className="flex items-center gap-2 px-4 py-6 text-sm text-ink-soft">
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-soft/40 border-t-ink-soft" />
+              Searching…
+            </div>
           ) : suggestions && suggestions.length > 0 ? (
             <>
               <ul className="divide-y divide-ink/5">
@@ -86,9 +89,9 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
                   <li key={product.id}>
                     <button
                       onClick={() => handleSelect(product.slug)}
-                      className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-ink/5"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-ink/5"
                     >
-                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-ink/5">
+                      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-ink/5">
                         {product.images[0] && (
                           <Image
                             src={product.images[0].url}
@@ -110,18 +113,25 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
               </ul>
               <button
                 onClick={goToResults}
-                className="block w-full border-t border-ink/10 px-4 py-2.5 text-center text-xs font-medium text-ink-soft hover:text-gold"
+                className="block w-full border-t border-ink/10 bg-cream/40 px-4 py-3 text-center text-xs font-medium text-ink-soft hover:text-gold"
               >
-                See all results for “{query.trim()}”
+                See all results for &ldquo;{query.trim()}&rdquo;
               </button>
             </>
           ) : (
-            <p className="px-4 py-3 text-xs text-ink-soft">
-              No products found for “{debouncedQuery}”.{" "}
-              <Link href="/search" className="underline hover:text-gold" onClick={() => setOpen(false)}>
-                Browse all
+            <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+              <SearchX size={20} className="text-ink-soft/40" />
+              <p className="text-sm text-ink-soft">
+                No products found for &ldquo;{debouncedQuery}&rdquo;
+              </p>
+              <Link
+                href="/search"
+                className="text-xs font-medium text-ink underline hover:text-gold"
+                onClick={() => setOpen(false)}
+              >
+                Browse all products
               </Link>
-            </p>
+            </div>
           )}
         </div>
       )}
