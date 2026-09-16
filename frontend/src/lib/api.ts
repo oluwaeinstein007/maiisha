@@ -1,4 +1,12 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Server Components/route handlers run inside the frontend container, where
+// NEXT_PUBLIC_API_URL (the browser-reachable host URL, e.g. localhost:8080)
+// doesn't resolve back to nginx. API_INTERNAL_URL (unprefixed, so it's read
+// live at request time rather than inlined into the client bundle) points
+// SSR fetches at the in-network service name instead — see docker-compose.yml.
+export const API_URL =
+  (typeof window === "undefined" ? process.env.API_INTERNAL_URL : undefined) ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8000";
 
 export class ApiError extends Error {
   status: number;

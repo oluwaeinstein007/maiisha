@@ -20,8 +20,10 @@ class ProductImage extends Model
 
     public function url(): string
     {
-        return str_starts_with($this->path, 'http')
-            ? $this->path
-            : Storage::disk('public')->url($this->path);
+        if (str_starts_with($this->path, 'http') || str_starts_with($this->path, 'data:')) {
+            return $this->path;
+        }
+
+        return Storage::disk('public')->url($this->path);
     }
 }

@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\DiscountCode;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\ProductVariant;
+use App\Models\Product;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Services\VatCalculator;
@@ -20,27 +20,28 @@ class OrderSeeder extends Seeder
 
     /**
      * customer index (into CustomerSeeder's list, by creation order) => order definition.
-     * Variant picks are by product/variant index within all in-stock variants, so this
-     * stays readable without hardcoding SKUs that could shift.
+     * Items are [product name, variant size, quantity] — looked up by name/size at
+     * runtime (see run()) rather than by position, so this doesn't break if
+     * ProductSeeder's catalogue is reordered or expanded.
      */
     private const ORDERS = [
-        ['customer' => 0, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 21, 'items' => [[0, 2], [4, 1]], 'discountCode' => 'WELCOME10'],
-        ['customer' => 1, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 18, 'items' => [[2, 1]]],
-        ['customer' => 2, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 6, 'items' => [[5, 1], [6, 3]]],
-        ['customer' => 3, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 4, 'items' => [[9, 1]]],
-        ['customer' => 4, 'status' => Order::STATUS_PROCESSING, 'placedDaysAgo' => 2, 'items' => [[1, 1], [10, 2]]],
-        ['customer' => 5, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 1, 'items' => [[7, 1]]],
-        ['customer' => 6, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 0, 'items' => [[3, 2]]],
-        ['customer' => 7, 'status' => Order::STATUS_CANCELLED, 'placedDaysAgo' => 10, 'items' => [[8, 1]]],
+        ['customer' => 0, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 21, 'items' => [['Silky Clip-In Extensions', '24"', 2], ['Argan Oil Hair Treatment', '100ml', 1]], 'discountCode' => 'WELCOME10'],
+        ['customer' => 1, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 18, 'items' => [['Gold-Trim Wrap Dress', 'M', 1]]],
+        ['customer' => 2, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 6, 'items' => [['Satin Blouse — Noir', 'S', 1], ['Pleated Maxi Dress', 'M', 3]]],
+        ['customer' => 3, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 4, 'items' => [['Embellished Abaya — Black & Gold', 'L', 1]]],
+        ['customer' => 4, 'status' => Order::STATUS_PROCESSING, 'placedDaysAgo' => 2, 'items' => [['Lace Front Wig — Bone Straight', '20"', 1], ['Premium Chiffon Hijab', 'One Size', 2]]],
+        ['customer' => 5, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 1, 'items' => [['Radiance Skincare Set', 'One Size', 1]]],
+        ['customer' => 6, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 0, 'items' => [['High-Waist Leggings — Charcoal', 'M', 2]]],
+        ['customer' => 7, 'status' => Order::STATUS_CANCELLED, 'placedDaysAgo' => 10, 'items' => [['Structured Tote Bag', 'One Size', 1]]],
     ];
 
     public function run(): void
     {
         $customers = User::where('role', 'customer')->orderBy('id')->get();
-        $variants = ProductVariant::with('product')->orderBy('id')->get()->values();
+        $productCount = Product::count();
 
-        if ($customers->count() < 8 || $variants->count() < 11) {
-            $this->command?->warn('OrderSeeder: not enough customers/variants seeded, skipping.');
+        if ($customers->count() < 8 || $productCount < 11) {
+            $this->command?->warn('OrderSeeder: not enough customers/products seeded, skipping.');
 
             return;
         }
@@ -54,15 +55,16 @@ class OrderSeeder extends Seeder
             $lines = [];
             $subtotal = 0;
 
-            foreach ($def['items'] as [$variantIndex, $qty]) {
-                $variant = $variants[$variantIndex];
+            foreach ($def['items'] as [$productName, $size, $qty]) {
+                $variant = Product::where('name', $productName)->firstOrFail()
+                    ->variants()->where('size', $size)->firstOrFail();
                 $unitPrice = $variant->priceInPence();
                 $lineTotal = $unitPrice * $qty;
                 $subtotal += $lineTotal;
 
                 $lines[] = [
                     'product_variant_id' => $variant->id,
-                    'product_name' => $variant->product->name,
+                    'product_name' => $productName,
                     'sku' => $variant->sku,
                     'size' => $variant->size,
                     'colour' => $variant->colour,
