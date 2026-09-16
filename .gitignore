@@ -11,6 +11,7 @@ Thumbs.db
 # Docker
 docker/data/
 *.env.local.docker
+.docker-compose.lock
 
 # Root-level env (for docker-compose)
 .env

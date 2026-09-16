@@ -42,6 +42,14 @@ docker compose exec backend php artisan db:seed
 
 (Seeded customers in `CustomerSeeder` also use `password` — see that file for their emails.)
 
+### Switching between the plain and dev-override builds
+
+`docker-compose.yml` and `docker-compose.dev.yml` build the backend/queue/scheduler images to distinct tags (`:latest` vs `:dev`) specifically so that switching between them — e.g. running a plain `docker compose up --build` after having used the dev override, or vice versa — can't silently overwrite the other variant's image. If you're running several `docker compose build`/`up --build` invocations against this repo at once (e.g. multiple terminals, or automation), pipe them through `scripts/docker-compose.sh` instead of calling `docker compose` directly — it's a drop-in wrapper that serializes them with a file lock so two concurrent builds can't interleave:
+
+```sh
+scripts/docker-compose.sh -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+```
+
 ## Running locally without Docker
 
 Follow [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md) to run each app with `composer dev` / `pnpm dev` directly — this is faster for day-to-day development than rebuilding containers. In short:

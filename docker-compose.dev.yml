@@ -6,18 +6,29 @@
 #
 # Deploy (deploy.yml) and any bare `docker compose` invocation only read
 # docker-compose.yml, so production images stay --no-dev.
+#
+# Each service below gets its own :dev image tag, distinct from the
+# :latest tag docker-compose.yml builds — without this, both variants
+# would build into the SAME compose-default image name (since neither
+# file set an explicit `image:` before), so whichever of `docker compose
+# up --build` / `... -f docker-compose.dev.yml up --build` ran most
+# recently would silently overwrite the other's image, regardless of
+# which one you actually meant to run.
 services:
   backend:
+    image: maiisha-backend:dev
     build:
       args:
         VENDOR_STAGE: vendor-dev
 
   queue:
+    image: maiisha-queue:dev
     build:
       args:
         VENDOR_STAGE: vendor-dev
 
   scheduler:
+    image: maiisha-scheduler:dev
     build:
       args:
         VENDOR_STAGE: vendor-dev

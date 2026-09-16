@@ -17,6 +17,7 @@ services:
     # other containers on this compose network.
 
   backend:
+    image: maiisha-backend:latest
     build:
       context: ./backend
     restart: unless-stopped
@@ -35,6 +36,7 @@ services:
         condition: service_healthy
 
   queue:
+    image: maiisha-queue:latest
     build:
       context: ./backend
     restart: unless-stopped
@@ -54,6 +56,7 @@ services:
         condition: service_healthy
 
   scheduler:
+    image: maiisha-scheduler:latest
     build:
       context: ./backend
     restart: unless-stopped
@@ -80,6 +83,11 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
     restart: unless-stopped
     env_file: ./frontend/.env.local
+    environment:
+      # Server-side (SSR) fetches run inside this container, where the
+      # browser-facing NEXT_PUBLIC_API_URL (localhost:8080) doesn't resolve
+      # back to nginx — route those over the compose network instead.
+      API_INTERNAL_URL: http://nginx
     depends_on:
       - backend
 
