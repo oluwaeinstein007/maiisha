@@ -45,6 +45,12 @@ return [
         'provider' => env('SMS_PROVIDER', 'log'),
     ],
 
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+    ],
+
     'frontend' => [
         'url' => env('FRONTEND_URL', 'http://localhost:3000'),
     ],

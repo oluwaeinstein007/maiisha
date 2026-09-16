@@ -8,6 +8,7 @@ use App\Contracts\SmsProvider;
 use App\Services\LogShippingProvider;
 use App\Services\LogSmsProvider;
 use App\Services\StripePaymentGateway;
+use App\Services\TwilioSmsProvider;
 use App\Services\VatCalculator;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Stripe\StripeClient;
+use Twilio\Rest\Client as TwilioClient;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,10 +25,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Both providers are logging stand-ins until a courier/SMS contract is
-        // signed (PRD §9) — swap the binding here when a real one is ready.
+        // Courier is a logging stand-in until a contract is signed (PRD §9) —
+        // swap the binding here when a real one is ready.
         $this->app->bind(ShippingProvider::class, LogShippingProvider::class);
-        $this->app->bind(SmsProvider::class, LogSmsProvider::class);
+
+        // SMS_PROVIDER=log (default) keeps the LogSmsProvider stand-in; "twilio"
+        // is a default pending client sign-off on the final vendor (PRD §9).
+        $this->app->bind(SmsProvider::class, function () {
+            if (config('services.sms.provider') === 'twilio') {
+                return new TwilioSmsProvider(
+                    new TwilioClient(config('services.twilio.sid'), config('services.twilio.token')),
+                    config('services.twilio.from'),
+                );
+            }
+
+            return new LogSmsProvider;
+        });
 
         $this->app->singleton(StripeClient::class, fn () => new StripeClient(config('services.stripe.secret')));
         $this->app->bind(PaymentGateway::class, StripePaymentGateway::class);
