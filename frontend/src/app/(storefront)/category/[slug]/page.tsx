@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { api, apiResource, ApiError, buildQuery } from "@/lib/api";
 import type { Category, PaginatedResponse, Product } from "@/lib/types";
 import { ProductGrid } from "@/components/product/ProductCard";
@@ -10,6 +11,11 @@ interface CategoryPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | undefined>>;
 }
+
+const EMPTY_RESULTS: PaginatedResponse<Product> = {
+  data: [],
+  meta: { current_page: 1, last_page: 1, per_page: 24, total: 0 },
+};
 
 async function getCategory(slug: string): Promise<Category | null> {
   try {
@@ -28,17 +34,25 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   if (!category) notFound();
 
   const page = Number(query.page ?? "1");
-  const products = await api.get<PaginatedResponse<Product>>(
-    `/api/products${buildQuery({
-      category: slug,
-      size: query.size,
-      colour: query.colour,
-      min_price: query.min_price,
-      max_price: query.max_price,
-      sort: query.sort,
-      page,
-    })}`,
-  );
+
+  let products: PaginatedResponse<Product>;
+  let loadError = false;
+  try {
+    products = await api.get<PaginatedResponse<Product>>(
+      `/api/products${buildQuery({
+        category: slug,
+        size: query.size,
+        colour: query.colour,
+        min_price: query.min_price,
+        max_price: query.max_price,
+        sort: query.sort,
+        page,
+      })}`,
+    );
+  } catch {
+    products = EMPTY_RESULTS;
+    loadError = true;
+  }
 
   const buildHref = (targetPage: number) => {
     const params = new URLSearchParams(query as Record<string, string>);
@@ -79,10 +93,19 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         <ProductFilterBar />
       </div>
 
-      <div className="mt-8">
-        <ProductGrid products={products.data} />
-        <Pagination meta={products.meta} buildHref={buildHref} />
-      </div>
+      {loadError ? (
+        <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-ink/10 py-16 text-center">
+          <AlertTriangle size={24} className="text-gold" />
+          <p className="text-sm text-ink-soft">
+            We couldn&apos;t load products right now. Please try again in a moment.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-8">
+          <ProductGrid products={products.data} />
+          <Pagination meta={products.meta} buildHref={buildHref} />
+        </div>
+      )}
     </div>
   );
 }
