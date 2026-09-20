@@ -22,6 +22,7 @@ export interface ProductImage {
   id: number;
   url: string;
   alt_text: string | null;
+  colour: string | null;
 }
 
 export interface ProductVariant {
@@ -44,6 +45,7 @@ export interface Product {
   price_pence: number;
   is_featured: boolean;
   is_active?: boolean;
+  hide_when_out_of_stock?: boolean;
   category: {
     id: number;
     name: string;
@@ -128,6 +130,7 @@ export type OrderStatus =
   | "placed"
   | "processing"
   | "shipped"
+  | "out_for_delivery"
   | "delivered"
   | "cancelled";
 
@@ -140,6 +143,7 @@ export interface OrderItem {
   unit_price_pence: number;
   quantity: number;
   line_total_pence: number;
+  image_url: string | null;
 }
 
 export interface Shipment {
@@ -167,7 +171,7 @@ export interface Order {
     name: string;
     email: string;
   };
-  address: Address;
+  address: Address | null;
   items: OrderItem[];
   shipment: Shipment | null;
 }
@@ -211,6 +215,8 @@ export interface AdminDashboard {
     status: OrderStatus;
     created_at: string;
   }>;
+  revenue_growth_percent: number | null;
+  daily_revenue: Array<{ date: string; revenue_pence: number }>;
 }
 
 export interface ApiValidationError {

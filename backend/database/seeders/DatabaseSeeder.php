@@ -18,27 +18,22 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
         ]);
 
-        User::factory()->create([
-            'name' => 'Aishat Isha',
-            'email' => 'admin@maiisha.test',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
-        ]);
+        // Keyed by the unique column (email/code) so re-running `db:seed` against
+        // an already-seeded database updates these in place instead of throwing.
+        User::updateOrCreate(
+            ['email' => 'admin@maiisha.test'],
+            ['name' => 'Aishat Isha', 'password' => bcrypt('password'), 'role' => 'admin'],
+        );
 
-        User::factory()->create([
-            'name' => 'Demo Customer',
-            'email' => 'customer@maiisha.test',
-            'password' => bcrypt('password'),
-            'role' => 'customer',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'customer@maiisha.test'],
+            ['name' => 'Demo Customer', 'password' => bcrypt('password'), 'role' => 'customer'],
+        );
 
-        DiscountCode::create([
-            'code' => 'WELCOME10',
-            'type' => 'percentage',
-            'value' => 10,
-            'usage_limit' => null,
-            'is_active' => true,
-        ]);
+        DiscountCode::updateOrCreate(
+            ['code' => 'WELCOME10'],
+            ['type' => 'percentage', 'value' => 10, 'usage_limit' => null, 'is_active' => true],
+        );
 
         $this->call([
             CustomerSeeder::class,

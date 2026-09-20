@@ -37,6 +37,11 @@ class OrderResource extends JsonResource
                 'unit_price_pence' => $item->unit_price_pence,
                 'quantity' => $item->quantity,
                 'line_total_pence' => $item->line_total_pence,
+                // Resolved from the variant's live product, not stored on the order
+                // item itself — a photo added/changed after the order was placed
+                // still shows up, same as product_name/sku/colour are point-in-time
+                // snapshots but the image is not.
+                'image_url' => optional($item->variant?->product?->imageFor($item->colour))->url(),
             ]),
             'shipment' => $this->whenLoaded('shipment', fn () => $this->shipment ? [
                 'courier' => $this->shipment->courier,

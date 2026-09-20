@@ -16,6 +16,7 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'price_pence' => $this->price_pence,
             'is_featured' => $this->is_featured,
+            'hide_when_out_of_stock' => $this->hide_when_out_of_stock,
             'category' => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,
@@ -25,6 +26,7 @@ class ProductResource extends JsonResource
                 'id' => $image->id,
                 'url' => $image->url(),
                 'alt_text' => $image->alt_text,
+                'colour' => $image->colour,
             ]),
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
             'in_stock' => $this->relationLoaded('variants') ? $this->inStock() : null,

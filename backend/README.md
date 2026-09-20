@@ -102,8 +102,9 @@ Documented rather than silently missing:
 
 - **Catalogue search (`?search=`) is a plain SQL `LIKE` match** on name/description — fine at the current catalogue size, but doesn't rank by relevance or handle typos/partial words. If the catalogue grows enough for that to matter, Postgres full-text search (`tsvector`) is the natural next step since production already runs on Postgres.
 - **Real shipping-courier and SMS integrations** are logging stand-ins (see above) pending the client actually contracting a provider (PRD §9) — the code path is real and tested, only the outbound call is stubbed.
-- **Apple Pay / Google Pay** activate automatically via Stripe's Payment Element once enabled in the Stripe Dashboard for a verified domain — no backend code change needed, but also nothing to demo until that's configured.
+- **Apple Pay / Google Pay** activate automatically via Stripe's Payment Element once enabled in the Stripe Dashboard for a verified domain — no backend code change needed, but also nothing to demo until that's configured. Apple Pay additionally requires the domain to be served over HTTPS (see below), which the production droplet doesn't have yet.
 - **Multi-currency and international shipping** are architected for (a `currency` column exists on `orders`/`payments`, shipping/tax logic is isolated in dedicated services) but not activated — GBP/UK-only is the confirmed Phase 1 scope (PRD §1.2, §8).
+- **TLS termination (NFR-1)** isn't set up yet — the production droplet itself is still stubbed (see `deploy.yml`), so there's no domain/cert to configure `nginx` with. The app-side half is done: `bootstrap/app.php` trusts the nginx sidecar's `X-Forwarded-*` headers, `AppServiceProvider` forces `https://` URL generation in production, and `docker/nginx/default.conf` forwards `X-Forwarded-Proto` to PHP-FPM. What's left, once the droplet exists, is purely infra: get a cert (e.g. Let's Encrypt/certbot) for the real domain, add a `listen 443 ssl` server block to `docker/nginx/default.conf`, redirect `:80` → `:443`, and set `SESSION_SECURE_COOKIE=true` in the production `.env`.
 
 ---
 

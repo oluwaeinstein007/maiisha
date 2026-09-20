@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { swrFetcherResource } from "@/lib/api";
 import { formatDate, formatPence } from "@/lib/money";
+import { isUnoptimizedImage } from "@/lib/image";
 import { OrderStatusTimeline } from "@/components/order/OrderStatusTimeline";
 import type { Order } from "@/lib/types";
 
@@ -66,12 +68,25 @@ export default function OrderDetailPage() {
         <div className="rounded-xl border border-ink/10">
           <ul className="divide-y divide-ink/10">
             {order.items.map((item) => (
-              <li key={item.id} className="flex justify-between gap-4 p-4">
-                <div>
-                  <p className="text-sm font-medium text-ink">{item.product_name}</p>
-                  <p className="text-xs text-ink-soft">
-                    {[item.size, item.colour].filter(Boolean).join(" / ")} · Qty {item.quantity}
-                  </p>
+              <li key={item.id} className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-ink/5">
+                    {item.image_url && (
+                      <Image
+                        src={item.image_url}
+                        alt={item.product_name}
+                        fill
+                        className="object-cover"
+                        unoptimized={isUnoptimizedImage(item.image_url)}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-ink">{item.product_name}</p>
+                    <p className="text-xs text-ink-soft">
+                      {[item.size, item.colour].filter(Boolean).join(" / ")} · Qty {item.quantity}
+                    </p>
+                  </div>
                 </div>
                 <p className="text-sm text-ink">{formatPence(item.line_total_pence)}</p>
               </li>
@@ -112,21 +127,25 @@ export default function OrderDetailPage() {
 
           <div className="rounded-xl border border-ink/10 p-6">
             <h3 className="font-display text-lg text-ink">Delivery address</h3>
-            <address className="mt-3 text-sm not-italic text-ink-soft">
-              {order.address.full_name}
-              <br />
-              {order.address.line1}
-              <br />
-              {order.address.line2 && (
-                <>
-                  {order.address.line2}
-                  <br />
-                </>
-              )}
-              {order.address.city}, {order.address.postcode}
-              <br />
-              {order.address.country}
-            </address>
+            {order.address ? (
+              <address className="mt-3 text-sm not-italic text-ink-soft">
+                {order.address.full_name}
+                <br />
+                {order.address.line1}
+                <br />
+                {order.address.line2 && (
+                  <>
+                    {order.address.line2}
+                    <br />
+                  </>
+                )}
+                {order.address.city}, {order.address.postcode}
+                <br />
+                {order.address.country}
+              </address>
+            ) : (
+              <p className="mt-3 text-sm text-ink-soft">No delivery address on file.</p>
+            )}
           </div>
         </div>
       </div>

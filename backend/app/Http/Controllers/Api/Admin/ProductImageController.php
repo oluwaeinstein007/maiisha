@@ -15,6 +15,7 @@ class ProductImageController extends Controller
         $data = $request->validate([
             'image' => ['required', 'image', 'max:5120'],
             'alt_text' => ['nullable', 'string', 'max:255'],
+            'colour' => ['nullable', 'string', 'max:255'],
         ]);
 
         $path = $request->file('image')->store('products', 'public');
@@ -22,6 +23,7 @@ class ProductImageController extends Controller
         $image = $product->images()->create([
             'path' => $path,
             'alt_text' => $data['alt_text'] ?? null,
+            'colour' => $data['colour'] ?? null,
             'sort_order' => $product->images()->count(),
         ]);
 
@@ -29,6 +31,24 @@ class ProductImageController extends Controller
             'id' => $image->id,
             'url' => $image->url(),
             'alt_text' => $image->alt_text,
+            'colour' => $image->colour,
+        ]);
+    }
+
+    public function update(Request $request, ProductImage $image)
+    {
+        $data = $request->validate([
+            'alt_text' => ['nullable', 'string', 'max:255'],
+            'colour' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $image->update($data);
+
+        return response()->json([
+            'id' => $image->id,
+            'url' => $image->url(),
+            'alt_text' => $image->alt_text,
+            'colour' => $image->colour,
         ]);
     }
 

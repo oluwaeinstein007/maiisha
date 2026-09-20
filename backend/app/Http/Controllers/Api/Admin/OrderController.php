@@ -16,13 +16,14 @@ class OrderController extends Controller
         Order::STATUS_PLACED,
         Order::STATUS_PROCESSING,
         Order::STATUS_SHIPPED,
+        Order::STATUS_OUT_FOR_DELIVERY,
         Order::STATUS_DELIVERED,
         Order::STATUS_CANCELLED,
     ];
 
     public function index(Request $request)
     {
-        $query = Order::query()->with(['user', 'items'])->latest();
+        $query = Order::query()->with(['user', 'items.variant.product.images'])->latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
@@ -33,7 +34,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        return new OrderResource($order->load(['user', 'address', 'items', 'shipment', 'payment']));
+        return new OrderResource($order->load(['user', 'address', 'items.variant.product.images', 'shipment', 'payment']));
     }
 
     public function updateStatus(
@@ -60,7 +61,7 @@ class OrderController extends Controller
                 $order->update(['status' => Order::STATUS_CANCELLED]);
             });
 
-            return new OrderResource($order->fresh(['user', 'address', 'items', 'shipment']));
+            return new OrderResource($order->fresh(['user', 'address', 'items.variant.product.images', 'shipment']));
         }
 
         $order->update(['status' => $data['status']]);
@@ -75,12 +76,17 @@ class OrderController extends Controller
             $notifier->shipped($order->load('items', 'user'));
         }
 
+        if ($data['status'] === Order::STATUS_OUT_FOR_DELIVERY) {
+            $order->shipment?->update(['status' => Order::STATUS_OUT_FOR_DELIVERY]);
+            $notifier->outForDelivery($order->load('items', 'user'));
+        }
+
         if ($data['status'] === Order::STATUS_DELIVERED) {
             $order->update(['delivered_at' => now()]);
             $order->shipment?->update(['status' => 'delivered']);
             $notifier->delivered($order->load('items', 'user'));
         }
 
-        return new OrderResource($order->load(['user', 'address', 'items', 'shipment']));
+        return new OrderResource($order->load(['user', 'address', 'items.variant.product.images', 'shipment']));
     }
 }

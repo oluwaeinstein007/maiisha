@@ -48,7 +48,7 @@ class CheckoutController extends Controller
         }
 
         [$subtotal, $discountPence, $shipping, $vat, $total, , $error] = $this->calculateTotals(
-            $cart, $data['discount_code'] ?? null
+            $cart, $data['discount_code'] ?? null, $request->user()->id
         );
 
         if ($error) {
@@ -97,7 +97,7 @@ class CheckoutController extends Controller
         }
 
         [$subtotal, $discountPence, $shipping, $vat, $total, $discountCode, $error] = $this->calculateTotals(
-            $cart, $data['discount_code'] ?? null
+            $cart, $data['discount_code'] ?? null, $user->id
         );
 
         if ($error) {
@@ -187,7 +187,7 @@ class CheckoutController extends Controller
         ]);
 
         return response()->json([
-            'order' => new OrderResource($order->load('items')),
+            'order' => new OrderResource($order->load('items.variant.product.images')),
             'client_secret' => $intent['client_secret'],
         ]);
     }
@@ -210,7 +210,7 @@ class CheckoutController extends Controller
     /**
      * @return array{0: int, 1: int, 2: int, 3: int, 4: int, 5: ?DiscountCode, 6: ?string}
      */
-    private function calculateTotals($cart, ?string $discountCodeInput): array
+    private function calculateTotals($cart, ?string $discountCodeInput, int $userId): array
     {
         $subtotal = $cart->subtotalPence();
         $discountCode = null;
@@ -224,6 +224,10 @@ class CheckoutController extends Controller
 
             if (! $discountCode || ! $discountCode->isValid()) {
                 $error = 'This discount code is invalid or has expired.';
+                $discountCode = null;
+            } elseif ($discountCode->usedBy($userId)) {
+                $error = "You've already used this discount code.";
+                $discountCode = null;
             } else {
                 $discountPence = $discountCode->discountPenceFor($subtotal);
             }

@@ -25,6 +25,7 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/filters', [ProductController::class, 'filters']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 
 // Guest carts are session-keyed (CartController::resolveCart) — same
@@ -84,6 +85,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::put('/variants/{variant}', [AdminProductVariantController::class, 'update']);
     Route::delete('/variants/{variant}', [AdminProductVariantController::class, 'destroy']);
     Route::post('/products/{product}/images', [AdminProductImageController::class, 'store']);
+    Route::patch('/images/{image}', [AdminProductImageController::class, 'update']);
     Route::delete('/images/{image}', [AdminProductImageController::class, 'destroy']);
 
     Route::get('/orders', [AdminOrderController::class, 'index']);

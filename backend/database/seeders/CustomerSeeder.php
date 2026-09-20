@@ -74,15 +74,24 @@ class CustomerSeeder extends Seeder
 
     public function run(): void
     {
+        // Keyed by email (the unique column) so re-running `db:seed` updates
+        // customers in place instead of throwing a duplicate-key error. The
+        // address is only created the first time, alongside the user.
         foreach (self::CUSTOMERS as $def) {
-            $user = User::create([
-                'name' => $def['name'],
-                'email' => $def['email'],
-                'phone' => $def['phone'],
-                'email_verified_at' => now(),
-                'password' => bcrypt('password'),
-                'role' => 'customer',
-            ]);
+            $user = User::updateOrCreate(
+                ['email' => $def['email']],
+                [
+                    'name' => $def['name'],
+                    'phone' => $def['phone'],
+                    'email_verified_at' => now(),
+                    'password' => bcrypt('password'),
+                    'role' => 'customer',
+                ],
+            );
+
+            if (! $user->wasRecentlyCreated) {
+                continue;
+            }
 
             Address::create([
                 'user_id' => $user->id,

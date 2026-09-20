@@ -79,6 +79,27 @@ class AdminOrderManagementTest extends TestCase
         $this->assertDatabaseHas('shipments', ['order_id' => $order->id, 'status' => 'delivered']);
     }
 
+    public function test_marking_an_order_out_for_delivery_updates_the_shipment_and_notifies_the_customer(): void
+    {
+        // FR-9/FR-18 list "out for delivery" as a notification milestone between
+        // shipped and delivered — this was previously unreachable because no such
+        // order status existed, so OrderNotifier::outForDelivery() was dead code.
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+
+        $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", ['status' => 'shipped']);
+        $response = $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", [
+            'status' => 'out_for_delivery',
+        ]);
+
+        $response->assertOk();
+        $order->refresh();
+        $this->assertEquals('out_for_delivery', $order->status);
+        $this->assertDatabaseHas('shipments', ['order_id' => $order->id, 'status' => 'out_for_delivery']);
+        Mail::assertSent(OrderStatusMail::class, 2);
+    }
+
     public function test_cancelling_a_placed_order_restocks_its_items(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

@@ -27,7 +27,7 @@ class CartResource extends JsonResource
                     'id' => $item->variant->product->id,
                     'name' => $item->variant->product->name,
                     'slug' => $item->variant->product->slug,
-                    'image_url' => optional($item->variant->product->images->first())->url(),
+                    'image_url' => optional($item->variant->product->imageFor($item->variant->colour))->url(),
                 ],
             ]),
             'subtotal_pence' => $this->subtotalPence(),

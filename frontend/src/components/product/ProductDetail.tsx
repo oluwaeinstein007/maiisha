@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { formatPence } from "@/lib/money";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
+import { isUnoptimizedImage } from "@/lib/image";
 import type { Product } from "@/lib/types";
 
 export function ProductDetail({ product }: { product: Product }) {
@@ -64,7 +65,20 @@ export function ProductDetail({ product }: { product: Product }) {
     }
   };
 
-  const images = product.images.length > 0 ? product.images : [{ id: 0, url: "", alt_text: null }];
+  const imagesForColour = useMemo(() => {
+    if (!selectedColour) return product.images;
+    const matches = product.images.filter((img) => img.colour === selectedColour);
+    return matches.length > 0 ? matches : product.images;
+  }, [product.images, selectedColour]);
+
+  const images =
+    imagesForColour.length > 0 ? imagesForColour : [{ id: 0, url: "", alt_text: null, colour: null }];
+
+  const [colourForActiveImage, setColourForActiveImage] = useState(selectedColour);
+  if (selectedColour !== colourForActiveImage) {
+    setColourForActiveImage(selectedColour);
+    setActiveImage(0);
+  }
 
   return (
     <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:px-8">
@@ -78,6 +92,7 @@ export function ProductDetail({ product }: { product: Product }) {
               sizes="(min-width: 1024px) 50vw, 100vw"
               className="object-cover"
               priority
+              unoptimized={isUnoptimizedImage(images[activeImage].url)}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-ink-soft/50">
@@ -85,9 +100,9 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
           )}
         </div>
-        {product.images.length > 1 && (
+        {images.length > 1 && (
           <div className="mt-3 flex gap-2">
-            {product.images.map((img, idx) => (
+            {images.map((img, idx) => (
               <button
                 key={img.id}
                 onClick={() => setActiveImage(idx)}
@@ -95,7 +110,13 @@ export function ProductDetail({ product }: { product: Product }) {
                   idx === activeImage ? "border-gold" : "border-ink/10"
                 }`}
               >
-                <Image src={img.url} alt={img.alt_text ?? product.name} fill className="object-cover" />
+                <Image
+                  src={img.url}
+                  alt={img.alt_text ?? product.name}
+                  fill
+                  className="object-cover"
+                  unoptimized={isUnoptimizedImage(img.url)}
+                />
               </button>
             ))}
           </div>
@@ -209,7 +230,15 @@ export function ProductDetail({ product }: { product: Product }) {
           </Button>
         </div>
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        <p aria-live="polite" className="sr-only">
+          {status === "added" ? "Item added to cart." : ""}
+        </p>
+
+        {error && (
+          <p role="alert" aria-live="assertive" className="mt-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
         {!user && status === "added" && (
           <p className="mt-4 text-xs text-ink-soft">

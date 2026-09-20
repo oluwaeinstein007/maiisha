@@ -20,19 +20,24 @@ class OrderSeeder extends Seeder
 
     /**
      * customer index (into CustomerSeeder's list, by creation order) => order definition.
-     * Items are [product name, variant size, quantity] — looked up by name/size at
-     * runtime (see run()) rather than by position, so this doesn't break if
-     * ProductSeeder's catalogue is reordered or expanded.
+     * Items are [product name, variant size, colour, quantity] — looked up by
+     * name/size/colour at runtime (see run()) rather than by position, so this
+     * doesn't break if ProductSeeder's catalogue is reordered or expanded.
+     * Colour is required whenever the product has more than one colourway,
+     * since size alone is ambiguous across colours.
      */
     private const ORDERS = [
-        ['customer' => 0, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 21, 'items' => [['Silky Clip-In Extensions', '24"', 2], ['Argan Oil Hair Treatment', '100ml', 1]], 'discountCode' => 'WELCOME10'],
-        ['customer' => 1, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 18, 'items' => [['Gold-Trim Wrap Dress', 'M', 1]]],
-        ['customer' => 2, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 6, 'items' => [['Satin Blouse — Noir', 'S', 1], ['Pleated Maxi Dress', 'M', 3]]],
-        ['customer' => 3, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 4, 'items' => [['Embellished Abaya — Black & Gold', 'L', 1]]],
-        ['customer' => 4, 'status' => Order::STATUS_PROCESSING, 'placedDaysAgo' => 2, 'items' => [['Lace Front Wig — Bone Straight', '20"', 1], ['Premium Chiffon Hijab', 'One Size', 2]]],
-        ['customer' => 5, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 1, 'items' => [['Radiance Skincare Set', 'One Size', 1]]],
-        ['customer' => 6, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 0, 'items' => [['High-Waist Leggings — Charcoal', 'M', 2]]],
-        ['customer' => 7, 'status' => Order::STATUS_CANCELLED, 'placedDaysAgo' => 10, 'items' => [['Structured Tote Bag', 'One Size', 1]]],
+        ['customer' => 0, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 21, 'items' => [['Silky Clip-In Extensions', '24"', 'Natural Black', 2], ['Argan Oil Hair Treatment', '100ml', null, 1]], 'discountCode' => 'WELCOME10'],
+        ['customer' => 1, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 18, 'items' => [['Gold-Trim Wrap Dress', 'M', 'Black', 1], ['Statement Hoop Earrings', 'One Size', 'Gold', 1]]],
+        ['customer' => 2, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 6, 'items' => [['Satin Blouse — Noir', 'S', 'Black', 1], ['Pleated Maxi Dress', 'M', 'Emerald', 3]]],
+        ['customer' => 3, 'status' => Order::STATUS_SHIPPED, 'placedDaysAgo' => 4, 'items' => [['Embellished Abaya — Black & Gold', 'L', 'Black', 1], ['Premium Chiffon Hijab', 'One Size', 'Black', 2], ['Jersey Hijab Set — 3 Pack', 'One Size', null, 1]]],
+        ['customer' => 4, 'status' => Order::STATUS_PROCESSING, 'placedDaysAgo' => 2, 'items' => [['Lace Front Wig — Bone Straight', '20"', 'Natural Black', 1], ['Premium Chiffon Hijab', 'One Size', 'Navy', 2]]],
+        ['customer' => 5, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 1, 'items' => [['Radiance Skincare Set', 'One Size', null, 1], ['Vitamin C Brightening Serum', '30ml', null, 1], ['Shea Butter Body Cream', '200ml', null, 2]]],
+        ['customer' => 6, 'status' => Order::STATUS_PLACED, 'placedDaysAgo' => 0, 'items' => [['High-Waist Leggings — Charcoal', 'M', 'Charcoal', 2], ['Cropped Sports Hoodie', 'M', 'Grey', 1]]],
+        ['customer' => 7, 'status' => Order::STATUS_CANCELLED, 'placedDaysAgo' => 10, 'items' => [['Structured Tote Bag', 'One Size', 'Black', 1]]],
+        ['customer' => 8, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 30, 'items' => [['Statement Ankle Boots', 'UK 5', 'Black', 1], ['Block Heel Sandals', 'UK 5', 'Nude', 1], ['Layered Gold Necklace', 'One Size', 'Gold', 1]]],
+        ['customer' => 9, 'status' => Order::STATUS_DELIVERED, 'placedDaysAgo' => 14, 'items' => [['Slim-Fit Agbada Set', 'L', 'Black', 1], ['Premium Cotton Thobe', 'L', 'White', 2]]],
+        ['customer' => 10, 'status' => Order::STATUS_PROCESSING, 'placedDaysAgo' => 1, 'items' => [['Longwear Liquid Foundation', 'One Size', 'Medium', 1], ['Matte Lipstick — Rich Gold Case', 'One Size', 'Ruby Red', 1], ['Gold Shimmer Eyeshadow Palette', 'One Size', null, 1]]],
     ];
 
     public function run(): void
@@ -40,8 +45,19 @@ class OrderSeeder extends Seeder
         $customers = User::where('role', 'customer')->orderBy('id')->get();
         $productCount = Product::count();
 
-        if ($customers->count() < 8 || $productCount < 11) {
+        if ($customers->count() < 11 || $productCount < 11) {
             $this->command?->warn('OrderSeeder: not enough customers/products seeded, skipping.');
+
+            return;
+        }
+
+        // This seeder has no natural unique key to updateOrCreate against (order
+        // numbers are randomly generated per run) — re-running `db:seed` would
+        // just pile up a second copy of the same demo history. Since its only
+        // job is to seed that fixed demo history once, bail out if it looks like
+        // it already has.
+        if (Order::where('user_id', $customers->first()->id)->exists()) {
+            $this->command?->warn('OrderSeeder: demo orders already exist, skipping.');
 
             return;
         }
@@ -55,9 +71,12 @@ class OrderSeeder extends Seeder
             $lines = [];
             $subtotal = 0;
 
-            foreach ($def['items'] as [$productName, $size, $qty]) {
+            foreach ($def['items'] as [$productName, $size, $colour, $qty]) {
                 $variant = Product::where('name', $productName)->firstOrFail()
-                    ->variants()->where('size', $size)->firstOrFail();
+                    ->variants()
+                    ->where('size', $size)
+                    ->when($colour !== null, fn ($q) => $q->where('colour', $colour))
+                    ->firstOrFail();
                 $unitPrice = $variant->priceInPence();
                 $lineTotal = $unitPrice * $qty;
                 $subtotal += $lineTotal;

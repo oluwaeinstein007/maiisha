@@ -27,6 +27,33 @@ class ProductCatalogTest extends TestCase
         $this->assertCount(1, $names);
     }
 
+    public function test_out_of_stock_product_stays_visible_by_default(): void
+    {
+        $category = Category::factory()->create();
+        $product = Product::factory()->for($category)->create(['name' => 'Silk Scarf']);
+        $product->variants()->create(['sku' => 'SKU-OOS', 'stock_quantity' => 0]);
+
+        $response = $this->getJson('/api/products');
+
+        $response->assertOk();
+        $this->assertContains('Silk Scarf', collect($response->json('data'))->pluck('name'));
+    }
+
+    public function test_out_of_stock_product_is_hidden_when_flagged(): void
+    {
+        $category = Category::factory()->create();
+        $product = Product::factory()->for($category)->create([
+            'name' => 'Silk Scarf',
+            'hide_when_out_of_stock' => true,
+        ]);
+        $product->variants()->create(['sku' => 'SKU-OOS', 'stock_quantity' => 0]);
+
+        $response = $this->getJson('/api/products');
+
+        $response->assertOk();
+        $this->assertNotContains('Silk Scarf', collect($response->json('data'))->pluck('name'));
+    }
+
     public function test_it_filters_products_by_category_slug(): void
     {
         $shoes = Category::factory()->create(['slug' => 'shoes']);

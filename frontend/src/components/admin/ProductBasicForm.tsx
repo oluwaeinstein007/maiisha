@@ -22,6 +22,7 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
     price: product ? (product.price_pence / 100).toFixed(2) : "",
     is_featured: product?.is_featured ?? false,
     is_active: product?.is_active ?? true,
+    hide_when_out_of_stock: product?.hide_when_out_of_stock ?? false,
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -42,6 +43,7 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
       price_pence: Math.round(Number(form.price) * 100),
       is_featured: form.is_featured,
       is_active: form.is_active,
+      hide_when_out_of_stock: form.hide_when_out_of_stock,
     };
 
     try {
@@ -123,6 +125,15 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
             className="h-4 w-4 rounded border-ink/30"
           />
           Active (visible in store)
+        </label>
+        <label className="flex items-center gap-2 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={form.hide_when_out_of_stock}
+            onChange={(e) => setForm((f) => ({ ...f, hide_when_out_of_stock: e.target.checked }))}
+            className="h-4 w-4 rounded border-ink/30"
+          />
+          Hide from store when out of stock
         </label>
       </div>
 

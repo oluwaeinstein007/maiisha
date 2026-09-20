@@ -862,7 +862,7 @@
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.test('Sales + stock summary is present', () => {",
-                  "    ['orders_count', 'revenue_pence', 'low_stock', 'out_of_stock_count', 'recent_orders'].forEach(k => pm.expect(body).to.have.property(k));",
+                  "    ['orders_count', 'revenue_pence', 'low_stock', 'out_of_stock_count', 'recent_orders', 'revenue_growth_percent', 'daily_revenue'].forEach(k => pm.expect(body).to.have.property(k));",
                   "});"
                 ]
               }
@@ -872,7 +872,7 @@
             "method": "GET",
             "header": [],
             "url": { "raw": "{{base_url}}/api/admin/dashboard", "host": ["{{base_url}}"], "path": ["api", "admin", "dashboard"] },
-            "description": "Order/revenue totals only count paid statuses (placed/processing/shipped/delivered) — a pending_payment order from an incomplete checkout won't show up here or in revenue_pence."
+            "description": "Order/revenue totals only count paid statuses (placed/processing/shipped/out_for_delivery/delivered) — a pending_payment order from an incomplete checkout won't show up here or in revenue_pence. `revenue_growth_percent` compares this calendar month's paid revenue to last month's (null with no prior-month baseline yet). `daily_revenue` is a zero-filled 14-day series for a trend chart."
           },
           "response": []
         }
@@ -1019,11 +1019,11 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — part of the Summer Collection.\",\n    \"price_pence\": 8999,\n    \"is_active\": true,\n    \"is_featured\": true\n}",
+              "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — part of the Summer Collection.\",\n    \"price_pence\": 8999,\n    \"is_active\": true,\n    \"is_featured\": true,\n    \"hide_when_out_of_stock\": false\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": { "raw": "{{base_url}}/api/admin/products", "host": ["{{base_url}}"], "path": ["api", "admin", "products"] },
-            "description": "`price_pence` is the base price shown when a variant has no `price_override_pence` of its own. Uses the category created in '09 - Admin - Categories'."
+            "description": "`price_pence` is the base price shown when a variant has no `price_override_pence` of its own. `hide_when_out_of_stock` (FR-23) defaults to `false` — an out-of-stock product still shows on the storefront marked \"out of stock\" unless set `true`. Uses the category created in '09 - Admin - Categories'."
           },
           "response": []
         },
@@ -1059,7 +1059,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — now 10% more golden.\",\n    \"price_pence\": 9499,\n    \"is_active\": true,\n    \"is_featured\": true\n}",
+              "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — now 10% more golden.\",\n    \"price_pence\": 9499,\n    \"is_active\": true,\n    \"is_featured\": true,\n    \"hide_when_out_of_stock\": false\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -1155,7 +1155,8 @@
               "mode": "formdata",
               "formdata": [
                 { "key": "image", "type": "file", "src": [], "description": "Select any local image file — required, max 5MB." },
-                { "key": "alt_text", "value": "Model wearing the Golden Hour Maxi Dress", "type": "text" }
+                { "key": "alt_text", "value": "Model wearing the Golden Hour Maxi Dress", "type": "text" },
+                { "key": "colour", "value": "Gold", "type": "text", "description": "Optional (FR-3). Ties this photo to a variant colour — Product::imageFor() matches it case-insensitively against the selected variant's colour on the storefront, cart and order history, falling back to the product's first photo when no colour matches." }
               ]
             },
             "url": {
@@ -1164,6 +1165,40 @@
               "path": ["api", "admin", "products", "{{admin_product_id}}", "images"]
             },
             "description": "Postman can't ship a binary file inside a shared collection export — click into the `image` form field and choose any local image before sending this request."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product Image (re-tag colour)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('admin_image_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: run Upload Product Image with a real file first', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"colour\": \"Gold\",\n    \"alt_text\": \"Model wearing the Golden Hour Maxi Dress\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/images/{{admin_image_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "images", "{{admin_image_id}}"]
+            },
+            "description": "Re-tags an already-uploaded photo's colour/alt text without re-uploading it — useful for backfilling colour on photos uploaded before this field existed."
           },
           "response": []
         },
@@ -1272,7 +1307,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "orders"],
               "query": [
-                { "key": "status", "value": "pending_payment", "description": "placed | processing | shipped | delivered | cancelled | pending_payment" }
+                { "key": "status", "value": "pending_payment", "description": "placed | processing | shipped | out_for_delivery | delivered | cancelled | pending_payment" }
               ]
             }
           },
@@ -1364,6 +1399,36 @@
               "path": ["api", "admin", "orders", "{{order_id}}", "status"]
             },
             "description": "Auto-creates a shipment record (via the ShippingProvider interface — a logging stand-in until a real courier aggregator is contracted, per PRD §9) and fires the email+SMS 'shipped' notification (FR-18). Check backend/storage/logs/laravel.log to see both."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status → Out for Delivery",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('order_id')) {",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "} else {",
+                  "    pm.test('Skipped: no order_id — see 05 - Checkout', () => pm.expect(true).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n    \"status\": \"out_for_delivery\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+            },
+            "description": "Fires the email+SMS 'out for delivery' notification (FR-9/FR-18) and updates the shipment's status. Run after 'Shipped' to see it stack in backend/storage/logs/laravel.log."
           },
           "response": []
         },

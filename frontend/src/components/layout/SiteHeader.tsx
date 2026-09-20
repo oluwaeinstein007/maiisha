@@ -48,13 +48,20 @@ export function SiteHeader() {
           >
             <ShoppingBag size={20} />
             {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-semibold text-ink">
+              <span
+                aria-hidden="true"
+                className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-semibold text-ink"
+              >
                 {itemCount > 9 ? "9+" : itemCount}
               </span>
             )}
           </Link>
         </div>
       </div>
+
+      <p aria-live="polite" className="sr-only">
+        {itemCount > 0 ? `Cart has ${itemCount} item${itemCount === 1 ? "" : "s"}` : ""}
+      </p>
 
       {categories && categories.length > 0 && (
         <nav className="hidden lg:block border-t border-ink/10">

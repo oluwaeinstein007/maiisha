@@ -61,6 +61,7 @@ class ProductController extends Controller
             'price_pence' => ['required', 'integer', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
             'is_featured' => ['sometimes', 'boolean'],
+            'hide_when_out_of_stock' => ['sometimes', 'boolean'],
         ]);
     }
 }

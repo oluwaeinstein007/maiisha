@@ -34,7 +34,14 @@ export default function EditProductPage() {
         onChanged={() => mutate()}
       />
 
-      <ImagesManager productId={product.id} images={product.images} onChanged={() => mutate()} />
+      <ImagesManager
+        productId={product.id}
+        images={product.images}
+        colours={Array.from(
+          new Set((product.variants ?? []).map((v) => v.colour).filter((v): v is string => !!v)),
+        )}
+        onChanged={() => mutate()}
+      />
     </div>
   );
 }

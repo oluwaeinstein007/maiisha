@@ -149,4 +149,42 @@ class CheckoutTest extends TestCase
         $response->assertOk();
         $this->assertGreaterThan(0, $response->json('discount_pence'));
     }
+
+    public function test_a_customer_cannot_reuse_a_discount_code_on_a_second_order(): void
+    {
+        $gateway = $this->fakeGateway();
+        $user = User::factory()->create();
+        $address = Address::factory()->for($user)->create();
+        $discountCode = DiscountCode::factory()->create(['code' => 'SAVE10', 'type' => 'percentage', 'value' => 10]);
+
+        $firstVariant = ProductVariant::factory()->create(['stock_quantity' => 5]);
+        $this->actingAs($user)->postJson('/api/cart/items', ['product_variant_id' => $firstVariant->id, 'quantity' => 1]);
+        $this->actingAs($user)->postJson('/api/checkout', [
+            'address_id' => $address->id,
+            'discount_code' => 'SAVE10',
+        ])->assertOk();
+
+        $this->assertCount(1, $gateway->calls);
+        $this->assertDatabaseCount('discount_code_usages', 1);
+
+        $secondVariant = ProductVariant::factory()->create(['stock_quantity' => 5]);
+        $this->actingAs($user)->postJson('/api/cart/items', ['product_variant_id' => $secondVariant->id, 'quantity' => 1]);
+
+        $response = $this->actingAs($user)->postJson('/api/checkout/preview', ['discount_code' => 'SAVE10']);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors('discount_code');
+        $this->assertStringContainsString('already used', $response->json('errors.discount_code.0'));
+
+        // A different customer hasn't used it yet, so the same code still works for them.
+        $otherUser = User::factory()->create();
+        $otherVariant = ProductVariant::factory()->create(['stock_quantity' => 5]);
+        $this->actingAs($otherUser)->postJson('/api/cart/items', ['product_variant_id' => $otherVariant->id, 'quantity' => 1]);
+
+        $otherResponse = $this->actingAs($otherUser)->postJson('/api/checkout/preview', ['discount_code' => 'SAVE10']);
+        $otherResponse->assertOk();
+        $this->assertGreaterThan(0, $otherResponse->json('discount_pence'));
+
+        $this->assertTrue($discountCode->usedBy($user->id));
+        $this->assertFalse($discountCode->usedBy($otherUser->id));
+    }
 }

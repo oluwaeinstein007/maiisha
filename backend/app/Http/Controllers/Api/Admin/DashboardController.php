@@ -12,12 +12,13 @@ class DashboardController extends Controller
         Order::STATUS_PLACED,
         Order::STATUS_PROCESSING,
         Order::STATUS_SHIPPED,
+        Order::STATUS_OUT_FOR_DELIVERY,
         Order::STATUS_DELIVERED,
     ];
 
     public function index()
     {
-        $paidOrders = Order::whereIn('status', self::PAID_STATUSES);
+        $paidOrders = $this->paidOrdersQuery();
 
         $lowStockVariants = ProductVariant::query()
             ->with('product')
@@ -46,6 +47,71 @@ class DashboardController extends Controller
                 'status' => $o->status,
                 'created_at' => $o->created_at,
             ]),
+            'revenue_growth_percent' => $this->revenueGrowthPercent(),
+            'daily_revenue' => $this->dailyRevenue(14),
         ]);
+    }
+
+    /**
+     * This calendar month's paid revenue vs last calendar month's, as a %
+     * change (FR-29). Null rather than 0/100 when there's no prior-month
+     * revenue to compare against — a founder's first month shouldn't be
+     * reported as "+infinite%" or misleadingly flat.
+     */
+    private function revenueGrowthPercent(): ?float
+    {
+        $now = now();
+        $lastMonth = $now->copy()->subMonthNoOverflow();
+
+        $thisMonthRevenue = $this->paidOrdersQuery()
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->sum('total_pence');
+
+        $lastMonthRevenue = $this->paidOrdersQuery()
+            ->whereYear('created_at', $lastMonth->year)
+            ->whereMonth('created_at', $lastMonth->month)
+            ->sum('total_pence');
+
+        if ($lastMonthRevenue === 0) {
+            return null;
+        }
+
+        return round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1);
+    }
+
+    /**
+     * Paid revenue per day for the last $days days, zero-filled so gaps
+     * (no orders that day) render as a flat line/bar rather than being
+     * skipped — grouped in PHP rather than a DB date-truncation function so
+     * this behaves the same on SQLite (tests) and Postgres (production).
+     *
+     * @return array<int, array{date: string, revenue_pence: int}>
+     */
+    private function dailyRevenue(int $days): array
+    {
+        $since = now()->subDays($days - 1)->startOfDay();
+
+        $ordersByDate = $this->paidOrdersQuery()
+            ->where('created_at', '>=', $since)
+            ->get(['created_at', 'total_pence'])
+            ->groupBy(fn (Order $o) => $o->created_at->toDateString());
+
+        return collect(range(0, $days - 1))
+            ->map(function (int $offset) use ($since, $ordersByDate) {
+                $date = $since->copy()->addDays($offset)->toDateString();
+
+                return [
+                    'date' => $date,
+                    'revenue_pence' => (int) ($ordersByDate->get($date)?->sum('total_pence') ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function paidOrdersQuery()
+    {
+        return Order::whereIn('status', self::PAID_STATUSES);
     }
 }

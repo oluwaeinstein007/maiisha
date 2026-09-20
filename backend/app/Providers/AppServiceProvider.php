@@ -10,10 +10,12 @@ use App\Services\LogSmsProvider;
 use App\Services\StripePaymentGateway;
 use App\Services\TwilioSmsProvider;
 use App\Services\VatCalculator;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Stripe\StripeClient;
 use Twilio\Rest\Client as TwilioClient;
@@ -65,6 +67,15 @@ class AppServiceProvider extends ServiceProvider
             return rtrim(config('services.frontend.url'), '/')."/reset-password?token={$token}&email={$email}";
         });
 
+        // Same problem, same fix: there's no "login" web route either, so an
+        // unauthenticated request that doesn't send Accept: application/json
+        // (expectsJson() false) makes the auth middleware try to redirect to
+        // one and crash with RouteNotFoundException instead of a clean 401.
+        // Returning null here skips the redirect attempt entirely so the
+        // normal AuthenticationException surfaces and shouldRenderJsonWhen()
+        // in bootstrap/app.php renders it as JSON.
+        Authenticate::redirectUsing(fn () => null);
+
         // General API baseline (NFR-1: standard OWASP protections). Auth-sensitive
         // routes layer a tighter, purpose-specific limit on top (see routes/api.php).
         RateLimiter::for('api', function (Request $request) {
@@ -78,5 +89,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset', function (Request $request) {
             return Limit::perMinute(3)->by($request->ip());
         });
+
+        // NFR-1: force HTTPS in every URL Laravel generates (password-reset
+        // links, signed URLs, etc.) once deployed. Combined with trustProxies()
+        // in bootstrap/app.php, this reads the real scheme off nginx's
+        // X-Forwarded-Proto header rather than assuming plain HTTP.
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

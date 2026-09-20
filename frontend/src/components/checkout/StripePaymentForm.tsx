@@ -64,7 +64,20 @@ function PaymentForm({ orderId, onSuccess }: { orderId: number; onSuccess: () =>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement />
+      {/*
+        FR-10: Apple Pay / Google Pay ride on the same PaymentElement as card —
+        Stripe shows their buttons automatically ("auto") above the card fields
+        when the browser/device is eligible. Made explicit here rather than
+        relying on the Stripe account's default so it's visible in one place.
+        Two things outside this codebase gate whether they actually render:
+          - The page must be served over HTTPS (Apple Pay requires it; most
+            browsers require a secure context for the Payment Request API).
+          - Apple Pay additionally requires the serving domain to be verified
+            in the Stripe Dashboard (Settings > Payment methods > Apple Pay >
+            Add a new domain), which re-hosts a domain-association file at
+            /.well-known/apple-developer-merchantid-domain-association.
+      */}
+      <PaymentElement options={{ wallets: { applePay: "auto", googlePay: "auto" } }} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" size="lg" className="w-full" loading={submitting} disabled={!stripe}>
         Pay now

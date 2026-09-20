@@ -67,7 +67,12 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-3 text-ink-soft">{formatPence(product.min_price_pence)}</td>
                 <td className="px-4 py-3 text-ink-soft">
                   {product.in_stock === false ? (
-                    <span className="text-red-600">Out of stock</span>
+                    <span className="text-red-600">
+                      Out of stock
+                      {product.hide_when_out_of_stock && (
+                        <span className="ml-1 text-ink-soft/60">(hidden)</span>
+                      )}
+                    </span>
                   ) : (
                     "In stock"
                   )}

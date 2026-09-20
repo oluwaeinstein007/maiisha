@@ -90,7 +90,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       )}
 
       <div className="mt-8">
-        <ProductFilterBar />
+        <ProductFilterBar category={slug} />
       </div>
 
       {loadError ? (

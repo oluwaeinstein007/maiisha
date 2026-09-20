@@ -26,6 +26,8 @@ class Order extends Model
 
     public const STATUS_SHIPPED = 'shipped';
 
+    public const STATUS_OUT_FOR_DELIVERY = 'out_for_delivery';
+
     public const STATUS_DELIVERED = 'delivered';
 
     public const STATUS_CANCELLED = 'cancelled';

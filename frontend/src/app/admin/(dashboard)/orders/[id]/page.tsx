@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -7,12 +8,20 @@ import useSWR from "swr";
 import { api, ApiError, swrFetcherResource } from "@/lib/api";
 import { formatDateTime, formatPence } from "@/lib/money";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_STYLES } from "@/lib/orderStatus";
+import { isUnoptimizedImage } from "@/lib/image";
 import { OrderStatusTimeline } from "@/components/order/OrderStatusTimeline";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
 import type { Order, OrderStatus } from "@/lib/types";
 
-const SETTABLE_STATUSES: OrderStatus[] = ["placed", "processing", "shipped", "delivered", "cancelled"];
+const SETTABLE_STATUSES: OrderStatus[] = [
+  "placed",
+  "processing",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+  "cancelled",
+];
 
 export default function AdminOrderDetailPage() {
   const params = useParams<{ id: string }>();
@@ -83,7 +92,9 @@ export default function AdminOrderDetailPage() {
             Update
           </Button>
         </div>
-        {(nextStatus === "shipped" || nextStatus === "delivered") && (
+        {(nextStatus === "shipped" ||
+          nextStatus === "out_for_delivery" ||
+          nextStatus === "delivered") && (
           <p className="mt-2 text-xs text-amber-700">
             This will email and text the customer immediately.
           </p>
@@ -95,13 +106,26 @@ export default function AdminOrderDetailPage() {
         <div className="rounded-xl border border-ink/10 bg-white">
           <ul className="divide-y divide-ink/10">
             {order.items.map((item) => (
-              <li key={item.id} className="flex justify-between gap-4 p-4">
-                <div>
-                  <p className="text-sm font-medium text-ink">{item.product_name}</p>
-                  <p className="text-xs text-ink-soft">
-                    {[item.size, item.colour].filter(Boolean).join(" / ")} · Qty {item.quantity} ·{" "}
-                    {item.sku}
-                  </p>
+              <li key={item.id} className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-ink/5">
+                    {item.image_url && (
+                      <Image
+                        src={item.image_url}
+                        alt={item.product_name}
+                        fill
+                        className="object-cover"
+                        unoptimized={isUnoptimizedImage(item.image_url)}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-ink">{item.product_name}</p>
+                    <p className="text-xs text-ink-soft">
+                      {[item.size, item.colour].filter(Boolean).join(" / ")} · Qty {item.quantity} ·{" "}
+                      {item.sku}
+                    </p>
+                  </div>
                 </div>
                 <p className="text-sm text-ink">{formatPence(item.line_total_pence)}</p>
               </li>
@@ -139,27 +163,31 @@ export default function AdminOrderDetailPage() {
 
           <div className="rounded-xl border border-ink/10 bg-white p-6">
             <h3 className="font-display text-base text-ink">Delivery address</h3>
-            <address className="mt-2 text-sm not-italic text-ink-soft">
-              {order.address.full_name}
-              <br />
-              {order.address.line1}
-              {order.address.line2 && (
-                <>
-                  <br />
-                  {order.address.line2}
-                </>
-              )}
-              <br />
-              {order.address.city}, {order.address.postcode}
-              <br />
-              {order.address.country}
-              {order.address.phone && (
-                <>
-                  <br />
-                  {order.address.phone}
-                </>
-              )}
-            </address>
+            {order.address ? (
+              <address className="mt-2 text-sm not-italic text-ink-soft">
+                {order.address.full_name}
+                <br />
+                {order.address.line1}
+                {order.address.line2 && (
+                  <>
+                    <br />
+                    {order.address.line2}
+                  </>
+                )}
+                <br />
+                {order.address.city}, {order.address.postcode}
+                <br />
+                {order.address.country}
+                {order.address.phone && (
+                  <>
+                    <br />
+                    {order.address.phone}
+                  </>
+                )}
+              </address>
+            ) : (
+              <p className="mt-2 text-sm text-ink-soft">No delivery address on file.</p>
+            )}
           </div>
         </div>
       </div>

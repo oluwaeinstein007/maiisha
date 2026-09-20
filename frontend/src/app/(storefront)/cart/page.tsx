@@ -7,6 +7,7 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { formatPence } from "@/lib/money";
+import { isUnoptimizedImage } from "@/lib/image";
 import { Button } from "@/components/ui/Button";
 
 export default function CartPage() {
@@ -55,6 +56,7 @@ export default function CartPage() {
                     alt={item.product.name}
                     fill
                     className="object-cover"
+                    unoptimized={isUnoptimizedImage(item.product.image_url)}
                   />
                 )}
               </div>
@@ -82,7 +84,9 @@ export default function CartPage() {
                     >
                       <Minus size={12} />
                     </button>
-                    <span className="w-6 text-center text-xs">{item.quantity}</span>
+                    <span aria-live="polite" className="w-6 text-center text-xs">
+                      {item.quantity}
+                    </span>
                     <button
                       onClick={() =>
                         updateItem(item.id, Math.min(item.variant.stock_quantity, item.quantity + 1))

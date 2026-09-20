@@ -83,4 +83,17 @@ class CartTest extends TestCase
         $this->assertNotNull($userCart);
         $this->assertEquals(2, $userCart->items->first()->quantity);
     }
+
+    public function test_cart_item_image_matches_the_variants_colour_not_just_the_first_photo(): void
+    {
+        $variant = ProductVariant::factory()->create(['stock_quantity' => 5, 'colour' => 'Gold']);
+        $product = $variant->product;
+        $product->images()->create(['path' => 'black.jpg', 'colour' => 'Black', 'sort_order' => 0]);
+        $gold = $product->images()->create(['path' => 'gold.jpg', 'colour' => 'Gold', 'sort_order' => 1]);
+
+        $response = $this->postJson('/api/cart/items', ['product_variant_id' => $variant->id, 'quantity' => 1]);
+
+        $response->assertCreated();
+        $this->assertStringContainsString($gold->path, $response->json('data.items.0.product.image_url'));
+    }
 }

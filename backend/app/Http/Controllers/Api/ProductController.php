@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -25,11 +26,11 @@ class ProductController extends Controller
         }
 
         if ($request->filled('size')) {
-            $query->whereHas('variants', fn ($q) => $q->where('size', $request->string('size')));
+            $query->whereHas('variants', fn ($q) => $q->where('size', 'ilike', $request->string('size')));
         }
 
         if ($request->filled('colour')) {
-            $query->whereHas('variants', fn ($q) => $q->where('colour', $request->string('colour')));
+            $query->whereHas('variants', fn ($q) => $q->where('colour', 'ilike', $request->string('colour')));
         }
 
         if ($request->filled('min_price')) {
@@ -50,6 +51,33 @@ class ProductController extends Controller
         $products = $query->paginate($request->integer('per_page', 24));
 
         return ProductResource::collection($products);
+    }
+
+    /**
+     * Distinct sizes/colours in use by active products, for the storefront's
+     * filter dropdowns (FR — pick from real values instead of free text).
+     * Scoped to a category when given, so the options shown match what's
+     * actually browsable there.
+     */
+    public function filters(Request $request)
+    {
+        $productIds = Product::query()
+            ->active()
+            ->when($request->filled('category'), fn ($q) => $q->whereHas(
+                'category',
+                fn ($c) => $c->where('slug', $request->string('category')),
+            ))
+            ->pluck('id');
+
+        $variants = ProductVariant::query()
+            ->whereIn('product_id', $productIds)
+            ->where('is_active', true)
+            ->get(['size', 'colour']);
+
+        return response()->json([
+            'sizes' => $variants->pluck('size')->filter()->unique()->sort()->values(),
+            'colours' => $variants->pluck('colour')->filter()->unique()->sort()->values(),
+        ]);
     }
 
     public function show(string $slug)

@@ -42,6 +42,17 @@ class DiscountCode extends Model
         return true;
     }
 
+    /**
+     * Separate from isValid() so callers can tell "invalid/expired" apart
+     * from "valid code, but you've already used it" and message accordingly
+     * (FR-21 covers one code per order; this additionally stops one customer
+     * reapplying the same single-use code across separate orders).
+     */
+    public function usedBy(int $userId): bool
+    {
+        return $this->usages()->where('user_id', $userId)->exists();
+    }
+
     public function discountPenceFor(int $subtotalPence): int
     {
         if ($this->type === 'percentage') {

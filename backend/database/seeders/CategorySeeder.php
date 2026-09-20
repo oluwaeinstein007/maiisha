@@ -23,22 +23,22 @@ class CategorySeeder extends Seeder
 
     public function run(): void
     {
+        // Keyed by slug (the unique column) so re-running `db:seed` against an
+        // already-seeded database updates in place instead of throwing a
+        // UniqueConstraintViolationException.
         $sortOrder = 0;
 
         foreach (self::CATEGORIES as $name => $children) {
-            $parent = Category::create([
-                'name' => $name,
-                'slug' => Str::slug($name),
-                'sort_order' => $sortOrder++,
-            ]);
+            $parent = Category::updateOrCreate(
+                ['slug' => Str::slug($name)],
+                ['name' => $name, 'sort_order' => $sortOrder++],
+            );
 
             foreach ($children as $i => $childName) {
-                Category::create([
-                    'parent_id' => $parent->id,
-                    'name' => $childName,
-                    'slug' => Str::slug($name.'-'.$childName),
-                    'sort_order' => $i,
-                ]);
+                Category::updateOrCreate(
+                    ['slug' => Str::slug($name.'-'.$childName)],
+                    ['parent_id' => $parent->id, 'name' => $childName, 'sort_order' => $i],
+                );
             }
         }
     }

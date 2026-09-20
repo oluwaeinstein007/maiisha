@@ -22,6 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
             'stateful.session' => EnsureSessionIsAvailable::class,
         ]);
+
+        // NFR-1: the app is only ever reached through the nginx sidecar in
+        // docker-compose.yml — never directly from the internet — so its
+        // X-Forwarded-* headers (proto/for/host) can be trusted unconditionally.
+        // This is what lets Laravel know a request was originally HTTPS even
+        // though nginx talks to php-fpm over plain fastcgi.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

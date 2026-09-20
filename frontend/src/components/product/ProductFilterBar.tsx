@@ -2,6 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import useSWR from "swr";
+import { swrFetcher, buildQuery } from "@/lib/api";
 
 const SORT_OPTIONS = [
   { value: "latest", label: "Newest" },
@@ -10,7 +12,12 @@ const SORT_OPTIONS = [
   { value: "best_selling", label: "Best selling" },
 ] as const;
 
-export function ProductFilterBar() {
+interface ProductFilters {
+  sizes: string[];
+  colours: string[];
+}
+
+export function ProductFilterBar({ category }: { category?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -18,6 +25,13 @@ export function ProductFilterBar() {
   const [colour, setColour] = useState(searchParams.get("colour") ?? "");
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") ?? "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") ?? "");
+
+  // Real values in use, rather than free text the customer has to guess —
+  // scoped to the current category so the options shown are all pickable.
+  const { data: filters } = useSWR<ProductFilters>(
+    `/api/products/filters${buildQuery({ category })}`,
+    swrFetcher,
+  );
 
   const pushParams = (updates: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -46,21 +60,33 @@ export function ProductFilterBar() {
       <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-3">
         <div>
           <label className="mb-1 block text-xs text-ink-soft">Size</label>
-          <input
+          <select
             value={size}
             onChange={(e) => setSize(e.target.value)}
-            placeholder="e.g. M"
-            className="w-24 rounded-md border border-ink/20 px-2.5 py-1.5 text-sm outline-none focus:border-gold"
-          />
+            className="w-28 rounded-md border border-ink/20 px-2.5 py-1.5 text-sm outline-none focus:border-gold"
+          >
+            <option value="">Any size</option>
+            {filters?.sizes.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-xs text-ink-soft">Colour</label>
-          <input
+          <select
             value={colour}
             onChange={(e) => setColour(e.target.value)}
-            placeholder="e.g. Black"
-            className="w-28 rounded-md border border-ink/20 px-2.5 py-1.5 text-sm outline-none focus:border-gold"
-          />
+            className="w-32 rounded-md border border-ink/20 px-2.5 py-1.5 text-sm outline-none focus:border-gold"
+          >
+            <option value="">Any colour</option>
+            {filters?.colours.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-xs text-ink-soft">Min £</label>

@@ -9,6 +9,7 @@ import { Search, SearchX } from "lucide-react";
 import { api, buildQuery } from "@/lib/api";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { formatPence } from "@/lib/money";
+import { isUnoptimizedImage } from "@/lib/image";
 import type { PaginatedResponse, Product } from "@/lib/types";
 
 const suggestFetcher = (path: string) => api.get<PaginatedResponse<Product>>(path).then((r) => r.data);
@@ -98,6 +99,7 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
                             alt=""
                             fill
                             className="object-cover"
+                            unoptimized={isUnoptimizedImage(product.images[0].url)}
                           />
                         )}
                       </div>
