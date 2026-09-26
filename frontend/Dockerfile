@@ -4,11 +4,13 @@ RUN corepack enable
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# A slow/flaky link drops the default 16 parallel downloads (ETIMEDOUT), so fetch gently,
+# retry, and keep the store in a cache mount so a retry resumes instead of restarting.
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --network-concurrency=4 --fetch-retries=8 --fetch-timeout=120000
 
-FROM base AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Built on top of deps so the pnpm that corepack fetched there is reused, not re-downloaded.
+FROM deps AS build
 COPY . .
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}

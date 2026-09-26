@@ -16,6 +16,8 @@ import { RevenueCard } from "@/components/admin/analytics/RevenueCard";
 import { StatTile } from "@/components/admin/charts/StatTile";
 import { QuickRestock } from "@/components/admin/QuickRestock";
 
+const RESTOCK_PREVIEW = 6;
+
 function AttentionCard({
   label,
   count,
@@ -57,7 +59,8 @@ export default function AdminDashboardPage() {
   const { data: sales } = useSWR<Sale[]>("/api/admin/sales", () => apiResource.get<Sale[]>("/api/admin/sales"));
 
   // Sold-out first: they cost sales now and shoppers may be waiting on them.
-  const restockRows = ops ? [...ops.out_of_stock, ...ops.low_stock] : [];
+  const restockRows = ops ? [...ops.out_of_stock, ...ops.low_stock].slice(0, RESTOCK_PREVIEW) : [];
+  const restockTotal = ops ? ops.out_of_stock_count + ops.low_stock_count : 0;
   const liveSales = sales?.filter((sale) => sale.status === "live") ?? [];
   const kpis = analytics?.kpis;
   const comparison = analytics ? comparisonLabel(analytics.range) : "";
@@ -122,13 +125,13 @@ export default function AdminDashboardPage() {
             label="Out of stock"
             count={ops.out_of_stock_count}
             hint="Variants with nothing left"
-            href="#restock"
+            href="/admin/inventory?status=out"
           />
           <AttentionCard
             label="Running low"
-            count={ops.low_stock.length}
+            count={ops.low_stock_count}
             hint="At or under their threshold"
-            href="#restock"
+            href="/admin/inventory?status=low"
           />
         </div>
       )}
@@ -226,13 +229,13 @@ export default function AdminDashboardPage() {
             ) : (
               <QuickRestock rows={restockRows} onChanged={() => mutateOps()} />
             )}
-            {ops.out_of_stock_count > ops.out_of_stock.length && (
-              <p className="mt-3 text-xs text-ink-soft">
-                Showing {ops.out_of_stock.length} of {ops.out_of_stock_count} sold-out variants.{" "}
-                <Link href="/admin/products" className="underline hover:text-gold">
-                  See all products
-                </Link>
-              </p>
+            {restockTotal > restockRows.length && (
+              <Link
+                href="/admin/inventory"
+                className="mt-2 inline-flex min-h-10 items-center gap-1.5 text-sm text-ink-soft hover:text-gold"
+              >
+                See all {restockTotal} in Inventory <ArrowRight size={14} aria-hidden="true" />
+              </Link>
             )}
           </div>
         </div>

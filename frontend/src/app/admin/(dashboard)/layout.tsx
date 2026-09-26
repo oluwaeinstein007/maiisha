@@ -6,6 +6,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   Award,
+  Boxes,
   BadgePercent,
   ChartColumn,
   ExternalLink,
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/analytics", label: "Analytics", icon: ChartColumn },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/inventory", label: "Inventory", icon: Boxes },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/brands", label: "Brands", icon: Award },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },

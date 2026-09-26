@@ -264,14 +264,22 @@ export interface AdminStockRow {
   size: string | null;
   colour: string | null;
   stock_quantity: number;
-  low_stock_threshold: number;
+  low_stock_threshold: number | null;
+  is_active: boolean;
+}
+
+/** GET /api/admin/inventory — a page of variants plus true totals for the filter chips. */
+export interface AdminInventory extends PaginatedResponse<AdminStockRow> {
+  counts: { out: number; low: number; all: number };
 }
 
 export interface AdminDashboard {
   orders_count: number;
   revenue_pence: number;
   pending_payment_count: number;
+  /** The 20 most urgent; `low_stock_count` is the true total. */
   low_stock: AdminStockRow[];
+  low_stock_count: number;
   /** Up to 20 sold-out variants; `out_of_stock_count` is the true total. */
   out_of_stock: AdminStockRow[];
   out_of_stock_count: number;

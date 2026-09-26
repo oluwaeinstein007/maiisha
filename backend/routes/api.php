@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\DemandController as AdminDemandController;
 use App\Http\Controllers\Api\Admin\DiscountCodeController as AdminDiscountCodeController;
+use App\Http\Controllers\Api\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
@@ -117,6 +118,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/customers/{customer}', [AdminCustomerController::class, 'show']);
     Route::get('/customers/{customer}/orders', [AdminCustomerController::class, 'orders']);
     Route::post('/customers/{customer}/message', [AdminCustomerController::class, 'sendMessage']);
+
+    Route::get('/inventory', [AdminInventoryController::class, 'index']);
 
     Route::apiResource('categories', AdminCategoryController::class)->except(['show']);
 

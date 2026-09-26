@@ -2248,6 +2248,95 @@
             "description": "Run this last in the folder — deletes the product created above, which then lets '09 - Admin - Categories → Delete Category' succeed if you re-run it."
           },
           "response": []
+        },
+        {
+          "name": "Restock Variant (+10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 (or 404 if variant_id unset)', () => pm.expect([200,404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/variants/{{variant_id}}/restock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "variants",
+                "{{variant_id}}",
+                "restock"
+              ]
+            },
+            "description": "Adds `quantity` to the variant's current stock (atomic — never overwrites). Fires back-in-stock emails when a sold-out variant returns.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"quantity\": 10}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inventory (needs restocking)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('has counts for the filter chips', () => pm.expect(pm.response.json().counts).to.have.keys('out','low','all'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/inventory?status=attention&search=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "inventory"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "attention"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "status: attention (default) | out | low | all. Most urgent first; search matches product name or SKU."
+          },
+          "response": []
         }
       ]
     },

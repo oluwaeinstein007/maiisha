@@ -24,6 +24,7 @@ function RestockRow({
   const amount = Number(quantity);
   const valid = Number.isInteger(amount) && amount >= 1;
   const variantLabel = [row.size, row.colour].filter(Boolean).join(" / ");
+  const isLow = row.low_stock_threshold != null && row.stock_quantity <= row.low_stock_threshold;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -54,16 +55,20 @@ function RestockRow({
             {row.product_name}
           </Link>
           <p className="text-xs text-ink-soft">
-            {[variantLabel, row.sku].filter(Boolean).join(" · ")}
+            {[variantLabel, row.sku, row.is_active ? null : "Hidden from shop"].filter(Boolean).join(" · ")}
           </p>
         </div>
         <span
           className={clsx(
             "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium",
-            row.stock_quantity === 0 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800",
+            row.stock_quantity === 0
+              ? "bg-red-100 text-red-700"
+              : isLow
+                ? "bg-amber-100 text-amber-800"
+                : "bg-ink/5 text-ink-soft",
           )}
         >
-          {row.stock_quantity === 0 ? "Out of stock" : `${row.stock_quantity} left`}
+          {row.stock_quantity === 0 ? "Out of stock" : isLow ? `${row.stock_quantity} left` : `${row.stock_quantity} in stock`}
         </span>
       </div>
 
