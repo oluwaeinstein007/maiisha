@@ -26,7 +26,7 @@ export default function OrderDetailPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <Link href="/account/orders" className="text-xs text-ink-soft hover:text-gold">
+          <Link href="/account/orders" className="inline-flex min-h-10 items-center text-xs text-ink-soft hover:text-gold">
             ← Back to orders
           </Link>
           <h2 className="mt-1 font-display text-xl text-ink">{order.order_number}</h2>
@@ -69,7 +69,7 @@ export default function OrderDetailPage() {
           <ul className="divide-y divide-ink/10">
             {order.items.map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-4 p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-ink/5">
                     {item.image_url && (
                       <Image
@@ -86,9 +86,21 @@ export default function OrderDetailPage() {
                     <p className="text-xs text-ink-soft">
                       {[item.size, item.colour].filter(Boolean).join(" / ")} · Qty {item.quantity}
                     </p>
+                    {item.sale_name && (
+                      <p className="mt-0.5 text-[11px] font-medium text-emerald-700">{item.sale_name}</p>
+                    )}
                   </div>
                 </div>
-                <p className="text-sm text-ink">{formatPence(item.line_total_pence)}</p>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm text-ink">{formatPence(item.line_total_pence)}</p>
+                  {item.original_unit_price_pence != null &&
+                    item.original_unit_price_pence > item.unit_price_pence && (
+                      <p className="text-xs text-ink-soft/60">
+                        <span className="sr-only">Was </span>
+                        <s>{formatPence(item.original_unit_price_pence * item.quantity)}</s>
+                      </p>
+                    )}
+                </div>
               </li>
             ))}
           </ul>
@@ -104,7 +116,12 @@ export default function OrderDetailPage() {
               </div>
               {order.discount_pence > 0 && (
                 <div className="flex justify-between text-ink-soft">
-                  <dt>Discount</dt>
+                  <dt>
+                    Discount
+                    {order.discount_code && (
+                      <span className="ml-1 text-xs text-ink-soft/70">({order.discount_code.code})</span>
+                    )}
+                  </dt>
                   <dd className="text-ink">-{formatPence(order.discount_pence)}</dd>
                 </div>
               )}

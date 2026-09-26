@@ -27,4 +27,15 @@ class StripePaymentGateway implements PaymentGateway
 
         return ['id' => $intent->id, 'client_secret' => $intent->client_secret];
     }
+
+    public function refund(string $paymentIntentId): array
+    {
+        try {
+            $refund = $this->stripe->refunds->create(['payment_intent' => $paymentIntentId]);
+        } catch (ApiErrorException $e) {
+            throw new RuntimeException('Payment gateway error: '.$e->getMessage(), previous: $e);
+        }
+
+        return ['id' => $refund->id, 'status' => $refund->status];
+    }
 }

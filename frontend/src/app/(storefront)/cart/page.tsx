@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { formatPence } from "@/lib/money";
 import { isUnoptimizedImage } from "@/lib/image";
 import { Button } from "@/components/ui/Button";
+import { PriceTag } from "@/components/ui/PriceTag";
 
 export default function CartPage() {
   const { cart, isLoading, updateItem, removeItem } = useCart();
@@ -72,14 +73,22 @@ export default function CartPage() {
                   <p className="mt-1 text-xs text-ink-soft">
                     {[item.variant.size, item.variant.colour].filter(Boolean).join(" / ")}
                   </p>
-                  <p className="mt-1 text-sm text-ink-soft">{formatPence(item.unit_price_pence)}</p>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    <PriceTag
+                      price={item.unit_price_pence}
+                      compareAt={item.compare_at_unit_price_pence}
+                    />
+                  </p>
+                  {item.sale_name && (
+                    <p className="mt-0.5 text-[11px] font-medium text-emerald-700">{item.sale_name}</p>
+                  )}
                 </div>
 
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center rounded-full border border-ink/20">
                     <button
                       onClick={() => updateItem(item.id, Math.max(1, item.quantity - 1))}
-                      className="p-2 text-ink-soft hover:text-ink"
+                      className="flex h-10 w-10 items-center justify-center text-ink-soft hover:text-ink"
                       aria-label="Decrease quantity"
                     >
                       <Minus size={12} />
@@ -91,7 +100,7 @@ export default function CartPage() {
                       onClick={() =>
                         updateItem(item.id, Math.min(item.variant.stock_quantity, item.quantity + 1))
                       }
-                      className="p-2 text-ink-soft hover:text-ink"
+                      className="flex h-10 w-10 items-center justify-center text-ink-soft hover:text-ink"
                       aria-label="Increase quantity"
                     >
                       <Plus size={12} />
@@ -100,7 +109,7 @@ export default function CartPage() {
 
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="text-ink-soft/60 hover:text-red-600"
+                    className="flex h-10 w-10 items-center justify-center text-ink-soft/60 hover:text-red-600"
                     aria-label="Remove item"
                   >
                     <Trash2 size={16} />
@@ -121,6 +130,12 @@ export default function CartPage() {
             <span>Subtotal</span>
             <span className="text-ink">{formatPence(cart.subtotal_pence)}</span>
           </div>
+          {cart.savings_pence > 0 && (
+            <div className="mt-2 flex justify-between text-sm text-emerald-700">
+              <span>Sale savings</span>
+              <span>−{formatPence(cart.savings_pence)}</span>
+            </div>
+          )}
           <p className="mt-1 text-xs text-ink-soft/70">
             VAT and shipping calculated at checkout.
           </p>

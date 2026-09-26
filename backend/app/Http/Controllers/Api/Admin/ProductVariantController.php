@@ -27,6 +27,22 @@ class ProductVariantController extends Controller
         return new ProductVariantResource($variant);
     }
 
+    /**
+     * Adds delivered units to a variant's stock. Adds rather than sets: the dashboard
+     * shows a count that may be minutes stale, and setting it would silently
+     * overwrite any orders placed since — an atomic increment can't.
+     */
+    public function restock(Request $request, ProductVariant $variant)
+    {
+        $data = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        $variant->increment('stock_quantity', $data['quantity']);
+
+        return new ProductVariantResource($variant->refresh());
+    }
+
     public function destroy(ProductVariant $variant)
     {
         $variant->delete();

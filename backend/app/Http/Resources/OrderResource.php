@@ -35,6 +35,8 @@ class OrderResource extends JsonResource
                 'size' => $item->size,
                 'colour' => $item->colour,
                 'unit_price_pence' => $item->unit_price_pence,
+                'original_unit_price_pence' => $item->original_unit_price_pence,
+                'sale_name' => $item->relationLoaded('sale') ? $item->sale?->name : null,
                 'quantity' => $item->quantity,
                 'line_total_pence' => $item->line_total_pence,
                 // Resolved from the variant's live product, not stored on the order
@@ -48,6 +50,16 @@ class OrderResource extends JsonResource
                 'tracking_number' => $this->shipment->tracking_number,
                 'tracking_url' => $this->shipment->tracking_url,
                 'status' => $this->shipment->status,
+            ] : null),
+            'discount_code' => $this->whenLoaded('discountCode', fn () => $this->discountCode ? [
+                'code' => $this->discountCode->code,
+                'type' => $this->discountCode->type,
+                'value' => $this->discountCode->value,
+            ] : null),
+            'payment' => $this->whenLoaded('payment', fn () => $this->payment ? [
+                'provider' => $this->payment->provider,
+                'status' => $this->payment->status,
+                'amount_pence' => $this->payment->amount_pence,
             ] : null),
         ];
     }

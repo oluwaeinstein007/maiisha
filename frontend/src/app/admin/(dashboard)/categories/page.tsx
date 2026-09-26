@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { api, swrFetcherResource } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
+import { IconAction } from "@/components/admin/IconAction";
 import { CategoryForm } from "@/components/admin/CategoryForm";
 import type { Category } from "@/lib/types";
 
@@ -48,45 +49,29 @@ export default function AdminCategoriesPage() {
       <div className="mt-6 space-y-3">
         {topLevel.map((category) => (
           <div key={category.id} className="rounded-xl border border-ink/10 bg-white">
-            <div className="flex items-center justify-between px-4 py-3">
-              <p className="text-sm font-medium text-ink">{category.name}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditing(category)}
-                  className="text-ink-soft/60 hover:text-ink"
-                  aria-label="Edit category"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(category.id)}
-                  className="text-ink-soft/60 hover:text-red-600"
-                  aria-label="Delete category"
-                >
-                  <Trash2 size={14} />
-                </button>
+            <div className="flex items-center justify-between gap-2 py-1 pl-4 pr-2">
+              <p className="min-w-0 truncate text-sm font-medium text-ink">{category.name}</p>
+              <div className="flex shrink-0">
+                <IconAction label={`Edit ${category.name}`} onClick={() => setEditing(category)}>
+                  <Pencil size={15} />
+                </IconAction>
+                <IconAction danger label={`Delete ${category.name}`} onClick={() => handleDelete(category.id)}>
+                  <Trash2 size={15} />
+                </IconAction>
               </div>
             </div>
             {category.children && category.children.length > 0 && (
               <ul className="divide-y divide-ink/5 border-t border-ink/10">
                 {category.children.map((child) => (
-                  <li key={child.id} className="flex items-center justify-between px-4 py-2.5 pl-8">
-                    <p className="text-sm text-ink-soft">{child.name}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditing(child)}
-                        className="text-ink-soft/60 hover:text-ink"
-                        aria-label="Edit category"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(child.id)}
-                        className="text-ink-soft/60 hover:text-red-600"
-                        aria-label="Delete category"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                  <li key={child.id} className="flex items-center justify-between gap-2 py-0.5 pl-8 pr-2">
+                    <p className="min-w-0 truncate text-sm text-ink-soft">{child.name}</p>
+                    <div className="flex shrink-0">
+                      <IconAction label={`Edit ${child.name}`} onClick={() => setEditing(child)}>
+                        <Pencil size={15} />
+                      </IconAction>
+                      <IconAction danger label={`Delete ${child.name}`} onClick={() => handleDelete(child.id)}>
+                        <Trash2 size={15} />
+                      </IconAction>
                     </div>
                   </li>
                 ))}

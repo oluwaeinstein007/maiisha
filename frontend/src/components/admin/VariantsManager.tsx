@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { IconAction } from "@/components/admin/IconAction";
 import { api } from "@/lib/api";
 import { formatPence } from "@/lib/money";
 import { Button } from "@/components/ui/Button";
@@ -61,21 +62,13 @@ export function VariantsManager({ productId, variants, onChanged }: VariantsMana
                   {!variant.is_active && " · Inactive"}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditingId(variant.id)}
-                  className="text-ink-soft/60 hover:text-ink"
-                  aria-label="Edit variant"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(variant.id)}
-                  className="text-ink-soft/60 hover:text-red-600"
-                  aria-label="Delete variant"
-                >
-                  <Trash2 size={14} />
-                </button>
+              <div className="flex shrink-0">
+                <IconAction label={`Edit variant ${variant.sku}`} onClick={() => setEditingId(variant.id)}>
+                  <Pencil size={15} />
+                </IconAction>
+                <IconAction danger label={`Delete variant ${variant.sku}`} onClick={() => handleDelete(variant.id)}>
+                  <Trash2 size={15} />
+                </IconAction>
               </div>
             </div>
           ),

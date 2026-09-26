@@ -7,6 +7,7 @@ use App\Contracts\ShippingProvider;
 use App\Contracts\SmsProvider;
 use App\Services\LogShippingProvider;
 use App\Services\LogSmsProvider;
+use App\Services\SalePricing;
 use App\Services\StripePaymentGateway;
 use App\Services\TwilioSmsProvider;
 use App\Services\VatCalculator;
@@ -46,6 +47,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(StripeClient::class, fn () => new StripeClient(config('services.stripe.secret')));
         $this->app->bind(PaymentGateway::class, StripePaymentGateway::class);
+
+        // One instance so the live sales are loaded once and shared by everything
+        // that prices a product in a request (see SalePricing).
+        $this->app->singleton(SalePricing::class);
 
         $this->app->singleton(VatCalculator::class, fn () => new VatCalculator(
             config('commerce.vat_rate')

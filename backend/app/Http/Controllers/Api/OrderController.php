@@ -13,7 +13,7 @@ class OrderController extends Controller
     {
         $orders = $request->user()
             ->orders()
-            ->with(['items.variant.product.images', 'address', 'shipment'])
+            ->with(['items.variant.product.images', 'items.sale', 'address', 'shipment'])
             ->latest()
             ->paginate(15);
 
@@ -24,6 +24,8 @@ class OrderController extends Controller
     {
         abort_unless($order->user_id === $request->user()->id, 404);
 
-        return new OrderResource($order->load(['items.variant.product.images', 'address', 'shipment']));
+        return new OrderResource($order->load([
+            'items.variant.product.images', 'items.sale', 'address', 'shipment', 'payment', 'discountCode',
+        ]));
     }
 }

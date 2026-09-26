@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\PaymentGateway;
 use App\Mail\OrderStatusMail;
 use App\Models\Address;
+use App\Models\DiscountCode;
+use App\Models\DiscountCodeUsage;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Tests\Support\FakePaymentGateway;
 use Tests\TestCase;
 
 class AdminOrderManagementTest extends TestCase
@@ -127,6 +132,109 @@ class AdminOrderManagementTest extends TestCase
         $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", ['status' => 'cancelled']);
 
         $this->assertEquals($stockBefore + 1, $variant->fresh()->stock_quantity);
+    }
+
+    public function test_cancelling_an_order_releases_its_discount_code_for_reuse(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+        $code = DiscountCode::create([
+            'code' => 'SAVE10',
+            'type' => 'percentage',
+            'value' => 10,
+            'is_active' => true,
+        ]);
+        $order->update(['discount_code_id' => $code->id]);
+        DiscountCodeUsage::create([
+            'discount_code_id' => $code->id,
+            'user_id' => $order->user_id,
+            'order_id' => $order->id,
+        ]);
+
+        $this->actingAs($admin)->patchJson("/api/admin/orders/{$order->id}/status", ['status' => 'cancelled'])
+            ->assertOk();
+
+        $this->assertFalse($code->usedBy($order->user_id));
+    }
+
+    public function test_refunding_a_paid_order_returns_stock_and_marks_it_cancelled(): void
+    {
+        $gateway = new FakePaymentGateway;
+        $this->app->instance(PaymentGateway::class, $gateway);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+        $variant = $order->items->first()->variant;
+        $stockBefore = $variant->stock_quantity;
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'stripe',
+            'provider_reference' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount_pence' => $order->total_pence,
+            'currency' => $order->currency,
+        ]);
+
+        $response = $this->actingAs($admin)->postJson("/api/admin/orders/{$order->id}/refund");
+
+        $response->assertOk();
+        $this->assertEquals('cancelled', $order->fresh()->status);
+        $this->assertEquals('refunded', $payment->fresh()->status);
+        $this->assertEquals($stockBefore + 1, $variant->fresh()->stock_quantity);
+        $this->assertCount(1, $gateway->refundCalls);
+        $this->assertEquals('pi_test_123', $gateway->refundCalls[0]['paymentIntentId']);
+    }
+
+    public function test_refunding_an_order_with_no_successful_payment_is_rejected(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+
+        $response = $this->actingAs($admin)->postJson("/api/admin/orders/{$order->id}/refund");
+
+        $response->assertStatus(422);
+        $this->assertEquals('placed', $order->fresh()->status);
+    }
+
+    public function test_a_failed_gateway_refund_leaves_the_order_untouched(): void
+    {
+        $gateway = new FakePaymentGateway;
+        $gateway->shouldFailRefund = true;
+        $this->app->instance(PaymentGateway::class, $gateway);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+        $variant = $order->items->first()->variant;
+        $stockBefore = $variant->stock_quantity;
+        Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'stripe',
+            'provider_reference' => 'pi_test_456',
+            'status' => 'succeeded',
+            'amount_pence' => $order->total_pence,
+            'currency' => $order->currency,
+        ]);
+
+        $response = $this->actingAs($admin)->postJson("/api/admin/orders/{$order->id}/refund");
+
+        $response->assertStatus(502);
+        $this->assertEquals('placed', $order->fresh()->status);
+        $this->assertEquals($stockBefore, $variant->fresh()->stock_quantity);
+    }
+
+    public function test_admins_can_search_orders_by_order_number_or_customer(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->placedOrder();
+        $order->update(['order_number' => 'MAI-FINDME-1']);
+        $other = $this->placedOrder();
+        $other->update(['order_number' => 'MAI-OTHER-2']);
+
+        $response = $this->actingAs($admin)->getJson('/api/admin/orders?search=FINDME');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals($order->id, $response->json('data.0.id'));
     }
 
     public function test_the_dashboard_reports_revenue_and_low_stock(): void

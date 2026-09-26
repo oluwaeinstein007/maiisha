@@ -1,14 +1,19 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Check, Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { formatPence } from "@/lib/money";
 import { ApiError } from "@/lib/api";
+import { formatSaleEnds, savingPercent } from "@/lib/sale";
 import { Button } from "@/components/ui/Button";
+import { PriceTag } from "@/components/ui/PriceTag";
+import { Stars } from "@/components/ui/Stars";
+import { WishlistButton } from "@/components/product/WishlistButton";
+import { StockAlertForm } from "@/components/product/StockAlertForm";
 import { isUnoptimizedImage } from "@/lib/image";
 import type { Product } from "@/lib/types";
 
@@ -48,6 +53,10 @@ export function ProductDetail({ product }: { product: Product }) {
   }, [variants, sizes, colours, selectedSize, selectedColour]);
 
   const price = selectedVariant?.price_pence ?? product.min_price_pence;
+  const compareAt = selectedVariant
+    ? selectedVariant.compare_at_price_pence
+    : product.compare_at_price_pence;
+  const saleEnds = formatSaleEnds(product.sale?.ends_at ?? null);
   const inStock = selectedVariant ? selectedVariant.in_stock && selectedVariant.is_active : false;
   const maxQuantity = selectedVariant?.stock_quantity ?? 0;
 
@@ -101,12 +110,13 @@ export function ProductDetail({ product }: { product: Product }) {
           )}
         </div>
         {images.length > 1 && (
-          <div className="mt-3 flex gap-2">
+          <div className="scrollbar-hide mt-3 flex gap-2 overflow-x-auto">
             {images.map((img, idx) => (
               <button
                 key={img.id}
                 onClick={() => setActiveImage(idx)}
-                className={`relative h-16 w-16 overflow-hidden rounded-md border ${
+                aria-label={`Show photo ${idx + 1}`}
+                className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border ${
                   idx === activeImage ? "border-gold" : "border-ink/10"
                 }`}
               >
@@ -125,10 +135,48 @@ export function ProductDetail({ product }: { product: Product }) {
 
       <div>
         <p className="text-xs uppercase tracking-wide text-ink-soft/60">
+          {product.brand && (
+            <>
+              <Link
+                href={`/brand/${product.brand.slug}`}
+                className="inline-flex min-h-8 items-center font-medium text-ink-soft hover:text-gold"
+              >
+                {product.brand.name}
+              </Link>
+              <span className="mx-1.5">·</span>
+            </>
+          )}
           {product.category.name}
         </p>
-        <h1 className="mt-1 font-display text-3xl text-ink">{product.name}</h1>
-        <p className="mt-3 text-xl text-ink">{formatPence(price)}</p>
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <h1 className="font-display text-3xl text-ink">{product.name}</h1>
+          <WishlistButton productId={product.id} className="shrink-0 border border-ink/10" />
+        </div>
+        {!!product.rating_count && product.rating_avg != null && (
+          <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-xs text-ink-soft hover:text-gold">
+            <Stars value={product.rating_avg} />
+            {product.rating_avg} ({product.rating_count})
+          </a>
+        )}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <PriceTag
+            price={price}
+            compareAt={compareAt}
+            className="text-ink"
+            priceClassName="text-xl"
+          />
+          {compareAt != null && compareAt > price && (
+            <span className="rounded-full bg-gold px-2.5 py-1 text-xs font-semibold text-ink">
+              Save {savingPercent(compareAt, price)}%
+            </span>
+          )}
+        </div>
+        {product.sale && compareAt != null && (
+          <p className="mt-1 text-xs text-ink-soft">
+            {product.sale.name}
+            {saleEnds && ` · ${saleEnds}`}
+          </p>
+        )}
 
         {product.description && (
           <p className="mt-5 text-sm leading-relaxed text-ink-soft">{product.description}</p>
@@ -196,7 +244,7 @@ export function ProductDetail({ product }: { product: Product }) {
           <div className="flex items-center rounded-full border border-ink/20">
             <button
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="p-2.5 text-ink-soft hover:text-ink"
+              className="flex h-11 w-11 items-center justify-center text-ink-soft hover:text-ink"
               aria-label="Decrease quantity"
             >
               <Minus size={14} />
@@ -204,7 +252,7 @@ export function ProductDetail({ product }: { product: Product }) {
             <span className="w-8 text-center text-sm">{quantity}</span>
             <button
               onClick={() => setQuantity((q) => Math.min(maxQuantity || 1, q + 1))}
-              className="p-2.5 text-ink-soft hover:text-ink"
+              className="flex h-11 w-11 items-center justify-center text-ink-soft hover:text-ink"
               aria-label="Increase quantity"
             >
               <Plus size={14} />
@@ -229,6 +277,8 @@ export function ProductDetail({ product }: { product: Product }) {
             )}
           </Button>
         </div>
+
+        {product.in_stock === false && <StockAlertForm slug={product.slug} />}
 
         <p aria-live="polite" className="sr-only">
           {status === "added" ? "Item added to cart." : ""}

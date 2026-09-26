@@ -32,6 +32,15 @@ class Order extends Model
 
     public const STATUS_CANCELLED = 'cancelled';
 
+    /** Statuses meaning the customer has actually paid — what revenue and sales figures count. */
+    public const PAID_STATUSES = [
+        self::STATUS_PLACED,
+        self::STATUS_PROCESSING,
+        self::STATUS_SHIPPED,
+        self::STATUS_OUT_FOR_DELIVERY,
+        self::STATUS_DELIVERED,
+    ];
+
     protected function casts(): array
     {
         return [

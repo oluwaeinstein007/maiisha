@@ -2,6 +2,7 @@ import Link from "next/link";
 import { api, apiResource, buildQuery } from "@/lib/api";
 import type { Category, PaginatedResponse, Product } from "@/lib/types";
 import { ProductGrid } from "@/components/product/ProductCard";
+import { getActiveSales } from "@/lib/sales";
 
 async function getCategories(): Promise<Category[]> {
   try {
@@ -22,15 +23,31 @@ async function getProducts(): Promise<Product[]> {
   }
 }
 
+async function getSaleProducts(): Promise<Product[]> {
+  try {
+    const res = await api.get<PaginatedResponse<Product>>(
+      `/api/products${buildQuery({ on_sale: 1, sort: "discount", per_page: 4 })}`,
+    );
+    return res.data;
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([getCategories(), getProducts()]);
+  const [categories, products, sales, saleProducts] = await Promise.all([
+    getCategories(),
+    getProducts(),
+    getActiveSales(),
+    getSaleProducts(),
+  ]);
   const featured = products.filter((p) => p.is_featured);
   const newIn = products.slice(0, 8);
 
   return (
     <div>
       <section className="relative overflow-hidden bg-ink text-cream">
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">
             Fashion &amp; Beauty Sphere
           </p>
@@ -41,16 +58,45 @@ export default async function HomePage() {
             Hair, fashion, activewear, modest wear, beauty and more — shipped
             across the UK.
           </p>
-          <div className="mt-8 flex gap-4">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/search"
-              className="rounded-full bg-gold px-7 py-3.5 text-sm font-medium text-ink transition-colors hover:bg-gold-soft"
+              className="inline-flex min-h-12 items-center rounded-full bg-gold px-7 text-sm font-medium text-ink transition-colors hover:bg-gold-soft"
             >
               Shop now
             </Link>
+            {sales.length > 0 && (
+              <Link
+                href="/sale"
+                className="inline-flex min-h-12 items-center rounded-full border border-gold/60 px-7 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-ink"
+              >
+                Shop the sale
+              </Link>
+            )}
           </div>
         </div>
       </section>
+
+      {saleProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
+          <div className="flex items-baseline justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl text-ink">
+                {sales.length === 1 ? sales[0].name : "On sale now"}
+              </h2>
+              {sales.length === 1 && sales[0].description && (
+                <p className="mt-1 text-sm text-ink-soft">{sales[0].description}</p>
+              )}
+            </div>
+            <Link href="/sale" className="shrink-0 py-2 text-sm text-ink-soft hover:text-gold">
+              Shop the sale
+            </Link>
+          </div>
+          <div className="mt-6">
+            <ProductGrid products={saleProducts} />
+          </div>
+        </section>
+      )}
 
       {categories.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -77,7 +123,7 @@ export default async function HomePage() {
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex items-baseline justify-between">
             <h2 className="font-display text-2xl text-ink">Featured</h2>
-            <Link href="/search" className="text-sm text-ink-soft hover:text-gold">
+            <Link href="/search" className="py-2 text-sm text-ink-soft hover:text-gold">
               View all
             </Link>
           </div>
@@ -90,7 +136,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex items-baseline justify-between">
           <h2 className="font-display text-2xl text-ink">New in</h2>
-          <Link href="/search" className="text-sm text-ink-soft hover:text-gold">
+          <Link href="/search" className="py-2 text-sm text-ink-soft hover:text-gold">
             View all
           </Link>
         </div>

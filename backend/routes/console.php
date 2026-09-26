@@ -11,3 +11,5 @@ Artisan::command('inspire', function () {
 // Off-server daily DB backup (PRD §7.2 / NFR-7). Runs inside the "scheduler"
 // container in docker-compose, which polls `schedule:run` every minute.
 Schedule::command('db:backup')->daily()->onOneServer();
+
+Schedule::command('carts:remind')->hourly()->onOneServer();

@@ -27,4 +27,14 @@ class Cart extends Model
     {
         return $this->items->sum(fn (CartItem $item) => $item->quantity * $item->variant->priceInPence());
     }
+
+    /** What live sales are currently taking off this cart, versus normal prices. */
+    public function savingsPence(): int
+    {
+        return $this->items->sum(function (CartItem $item) {
+            $quote = $item->variant->quote();
+
+            return $item->quantity * ($quote['original'] - $quote['price']);
+        });
+    }
 }

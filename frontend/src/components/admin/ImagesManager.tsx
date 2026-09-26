@@ -68,7 +68,7 @@ export function ImagesManager({ productId, images, colours, onChanged }: ImagesM
               value={uploadColour}
               onChange={(e) => setUploadColour(e.target.value)}
               aria-label="Colour for next upload"
-              className="rounded-md border border-ink/20 bg-white px-2.5 py-2 text-sm text-ink outline-none focus:border-gold"
+              className="min-h-10 rounded-md border border-ink/20 bg-white px-2.5 py-2 text-base text-ink outline-none focus:border-gold sm:text-sm"
             >
               <option value="">No colour</option>
               {colours.map((colour) => (
@@ -121,10 +121,10 @@ export function ImagesManager({ productId, images, colours, onChanged }: ImagesM
               />
               <button
                 onClick={() => handleDelete(image.id)}
-                className="absolute right-1.5 top-1.5 rounded-full bg-ink/80 p-1.5 text-cream opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute right-1.5 top-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-ink/80 text-cream transition-opacity focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 aria-label="Delete image"
               >
-                <Trash2 size={12} />
+                <Trash2 size={14} />
               </button>
             </div>
             {colours.length > 0 && (
@@ -133,7 +133,7 @@ export function ImagesManager({ productId, images, colours, onChanged }: ImagesM
                 disabled={savingColourFor === image.id}
                 onChange={(e) => handleColourChange(image.id, e.target.value)}
                 aria-label={`Colour for image ${image.id}`}
-                className="mt-1.5 w-full rounded-md border border-ink/20 bg-white px-1.5 py-1 text-xs text-ink outline-none focus:border-gold disabled:opacity-50"
+                className="mt-1.5 min-h-10 w-full rounded-md border border-ink/20 bg-white px-1.5 py-1 text-base text-ink outline-none focus:border-gold sm:min-h-0 sm:text-xs disabled:opacity-50"
               >
                 <option value="">No colour</option>
                 {colours.map((colour) => (

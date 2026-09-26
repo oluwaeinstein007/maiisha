@@ -1,180 +1,242 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
-import { AlertTriangle, TrendingDown, TrendingUp } from "lucide-react";
-import { swrFetcher } from "@/lib/api";
-import { formatDate, formatDateTime, formatPence } from "@/lib/money";
+import clsx from "clsx";
+import { AlertTriangle, ArrowRight, BadgePercent, ChevronRight } from "lucide-react";
+import { apiResource, swrFetcher } from "@/lib/api";
+import { formatDateTime, formatPence, formatPenceCompact } from "@/lib/money";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_STYLES } from "@/lib/orderStatus";
-import type { AdminDashboard } from "@/lib/types";
+import { describeSchedule } from "@/lib/sale";
+import { comparisonLabel, describeRange, useAnalytics, type RangeSelection } from "@/lib/useAnalytics";
+import type { AdminDashboard, Sale } from "@/lib/types";
+import { RangeFilter } from "@/components/admin/analytics/RangeFilter";
+import { RevenueCard } from "@/components/admin/analytics/RevenueCard";
+import { StatTile } from "@/components/admin/charts/StatTile";
+import { QuickRestock } from "@/components/admin/QuickRestock";
 
-function StatCard({
+function AttentionCard({
   label,
-  value,
-  trend,
+  count,
+  hint,
+  href,
 }: {
   label: string;
-  value: string;
-  trend?: { positive: boolean; label: string } | null;
+  count: number;
+  hint: string;
+  href: string;
 }) {
+  const needsAttention = count > 0;
+
   return (
-    <div className="rounded-xl border border-ink/10 bg-white p-5">
-      <p className="text-xs uppercase tracking-wide text-ink-soft/60">{label}</p>
-      <div className="mt-2 flex items-baseline gap-2">
-        <p className="font-display text-2xl text-ink">{value}</p>
-        {trend && (
-          <span
-            className={`flex items-center gap-0.5 text-xs font-medium ${
-              trend.positive ? "text-emerald-600" : "text-red-600"
-            }`}
-          >
-            {trend.positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {trend.label}
-          </span>
+    <Link
+      href={href}
+      className="group flex min-h-20 items-center justify-between gap-3 rounded-xl border border-ink/10 bg-white p-4 transition-colors hover:border-gold sm:p-5"
+    >
+      <div className="min-w-0">
+        <p className="text-xs text-ink-soft">{label}</p>
+        <p className="mt-1 text-xs text-ink-soft/70">{hint}</p>
+      </div>
+      <p
+        className={clsx(
+          "font-sans text-3xl font-semibold leading-none",
+          needsAttention ? "text-amber-700" : "text-ink/30",
         )}
-      </div>
-    </div>
-  );
-}
-
-const CHART_HEIGHT_PX = 120;
-
-function DailyRevenueChart({ data }: { data: AdminDashboard["daily_revenue"] }) {
-  if (data.length === 0) {
-    return null;
-  }
-
-  const max = Math.max(...data.map((d) => d.revenue_pence), 1);
-
-  return (
-    <div className="rounded-xl border border-ink/10 bg-white p-5">
-      <h2 className="font-display text-lg text-ink">Revenue, last {data.length} days</h2>
-      {data.every((d) => d.revenue_pence === 0) ? (
-        <p className="mt-4 text-sm text-ink-soft">No revenue in this window yet.</p>
-      ) : (
-        <div className="mt-6 flex items-end gap-1.5" style={{ height: CHART_HEIGHT_PX }}>
-          {data.map((day) => (
-            <div
-              key={day.date}
-              className="group relative flex-1"
-              title={`${formatDate(day.date)}: ${formatPence(day.revenue_pence)}`}
-            >
-              <div
-                className="w-full rounded-t bg-gold/70 transition-colors group-hover:bg-gold"
-                style={{
-                  height: day.revenue_pence > 0
-                    ? Math.max((day.revenue_pence / max) * CHART_HEIGHT_PX, 4)
-                    : 1,
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="mt-2 flex justify-between text-[11px] text-ink-soft/60">
-        <span>{formatDate(data[0].date)}</span>
-        <span>{formatDate(data[data.length - 1].date)}</span>
-      </div>
-    </div>
+      >
+        {count}
+      </p>
+    </Link>
   );
 }
 
 export default function AdminDashboardPage() {
-  const { data } = useSWR<AdminDashboard>("/api/admin/dashboard", swrFetcher, {
-    refreshInterval: 60_000,
-  });
+  const [selection, setSelection] = useState<RangeSelection>({ range: "30d" });
+  const { data: analytics, isRefreshing } = useAnalytics(selection);
+  const { data: ops, mutate: mutateOps } = useSWR<AdminDashboard>("/api/admin/dashboard", swrFetcher, { refreshInterval: 60_000 });
+  const { data: sales } = useSWR<Sale[]>("/api/admin/sales", () => apiResource.get<Sale[]>("/api/admin/sales"));
 
-  if (!data) {
-    return <p className="text-sm text-ink-soft">Loading…</p>;
-  }
+  // Sold-out first: they cost sales now and shoppers may be waiting on them.
+  const restockRows = ops ? [...ops.out_of_stock, ...ops.low_stock] : [];
+  const liveSales = sales?.filter((sale) => sale.status === "live") ?? [];
+  const kpis = analytics?.kpis;
+  const comparison = analytics ? comparisonLabel(analytics.range) : "";
 
   return (
-    <div className="space-y-8">
-      <h1 className="font-display text-2xl text-ink">Dashboard</h1>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Revenue"
-          value={formatPence(data.revenue_pence)}
-          trend={
-            data.revenue_growth_percent === null
-              ? null
-              : {
-                  positive: data.revenue_growth_percent >= 0,
-                  label: `${data.revenue_growth_percent >= 0 ? "+" : ""}${data.revenue_growth_percent}% vs last month`,
-                }
-          }
-        />
-        <StatCard label="Orders" value={String(data.orders_count)} />
-        <StatCard label="Pending payment" value={String(data.pending_payment_count)} />
-        <StatCard label="Out of stock" value={String(data.out_of_stock_count)} />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+        <div>
+          <h1 className="font-display text-2xl text-ink">Dashboard</h1>
+          {analytics && <p className="mt-1 text-sm text-ink-soft">{describeRange(analytics.range)}</p>}
+        </div>
+        <Link href="/admin/analytics" className="inline-flex min-h-10 items-center gap-1.5 text-sm text-ink-soft hover:text-gold">
+          Full analytics <ArrowRight size={14} aria-hidden="true" />
+        </Link>
       </div>
 
-      <DailyRevenueChart data={data.daily_revenue} />
+      <RangeFilter value={selection} onChange={setSelection} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-ink/10 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg text-ink">Recent orders</h2>
-            <Link href="/admin/orders" className="text-sm text-ink-soft hover:text-gold">
-              View all
+      {!analytics && <p className="py-6 text-sm text-ink-soft">Loading…</p>}
+
+      {analytics && kpis && (
+        <div className={clsx("space-y-6 transition-opacity duration-200", isRefreshing && "opacity-60")} aria-busy={isRefreshing}>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatTile
+              hero
+              className="sm:col-span-2"
+              label="Revenue"
+              value={formatPenceCompact(kpis.revenue_pence.current)}
+              change={kpis.revenue_pence.change_percent}
+              comparison={comparison}
+              trend={analytics.timeseries.map((p) => p.revenue_pence)}
+              footnote="Paid orders, including VAT and shipping"
+            />
+            <StatTile
+              label="Orders"
+              value={String(kpis.orders.current)}
+              change={kpis.orders.change_percent}
+              comparison={comparison}
+              trend={analytics.timeseries.map((p) => p.orders)}
+            />
+            <StatTile
+              label="Average order value"
+              value={formatPenceCompact(kpis.average_order_value_pence.current)}
+              change={kpis.average_order_value_pence.change_percent}
+              comparison={comparison}
+            />
+          </div>
+
+          <RevenueCard data={analytics} busy={isRefreshing} />
+        </div>
+      )}
+
+      {ops && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <AttentionCard
+            label="Awaiting payment"
+            count={ops.pending_payment_count}
+            hint="Checkouts started, not paid"
+            href="/admin/orders"
+          />
+          <AttentionCard
+            label="Out of stock"
+            count={ops.out_of_stock_count}
+            hint="Variants with nothing left"
+            href="#restock"
+          />
+          <AttentionCard
+            label="Running low"
+            count={ops.low_stock.length}
+            hint="At or under their threshold"
+            href="#restock"
+          />
+        </div>
+      )}
+
+      {sales && (
+        <section className="rounded-xl border border-ink/10 bg-white p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 font-display text-lg text-ink">
+              <BadgePercent size={18} className="text-gold-deep" aria-hidden="true" />
+              Sales running now
+            </h2>
+            <Link href="/admin/sales" className="inline-flex min-h-10 items-center text-sm text-ink-soft hover:text-gold">
+              Manage sales
             </Link>
           </div>
-          {data.recent_orders.length === 0 ? (
-            <p className="mt-4 text-sm text-ink-soft">No orders yet.</p>
+          {liveSales.length === 0 ? (
+            <p className="mt-3 text-sm text-ink-soft">
+              Nothing is on sale right now.{" "}
+              <Link href="/admin/sales/new" className="text-ink underline hover:text-gold">
+                Create a sale
+              </Link>
+            </p>
           ) : (
-            <ul className="mt-4 divide-y divide-ink/10">
-              {data.recent_orders.map((order) => (
-                <li key={order.id} className="flex items-center justify-between py-3">
-                  <div>
+            <ul className="mt-1 divide-y divide-ink/10">
+              {liveSales.map((sale) => (
+                <li key={sale.id}>
+                  <Link
+                    href={`/admin/sales/${sale.id}`}
+                    className="-mx-4 flex items-baseline justify-between gap-4 px-4 py-3 transition-colors hover:bg-ink/5 sm:-mx-5 sm:px-5"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink">{sale.name}</p>
+                      <p className="truncate text-xs text-ink-soft">{describeSchedule(sale)}</p>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-sm font-semibold text-ink">{sale.discount_label}</span>
+                      <ChevronRight size={16} className="text-ink-soft/50" aria-hidden="true" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {ops && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="min-w-0 rounded-xl border border-ink/10 bg-white p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg text-ink">Recent orders</h2>
+              <Link href="/admin/orders" className="inline-flex min-h-10 items-center text-sm text-ink-soft hover:text-gold">
+                View all
+              </Link>
+            </div>
+            {ops.recent_orders.length === 0 ? (
+              <p className="mt-2 text-sm text-ink-soft">No orders yet.</p>
+            ) : (
+              <ul className="mt-1 divide-y divide-ink/10">
+                {ops.recent_orders.map((order) => (
+                  <li key={order.id}>
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="text-sm font-medium text-ink hover:text-gold"
+                      className="-mx-4 flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-ink/5 sm:-mx-5 sm:px-5"
                     >
-                      {order.order_number}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-ink">{order.order_number}</p>
+                        <p className="truncate text-xs text-ink-soft">
+                          {order.customer} · {formatDateTime(order.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${ORDER_STATUS_STYLES[order.status]}`}>
+                            {ORDER_STATUS_LABELS[order.status]}
+                          </span>
+                          <span className="text-sm text-ink">{formatPence(order.total_pence)}</span>
+                        </div>
+                        <ChevronRight size={16} className="text-ink-soft/50" aria-hidden="true" />
+                      </div>
                     </Link>
-                    <p className="text-xs text-ink-soft">
-                      {order.customer} · {formatDateTime(order.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${ORDER_STATUS_STYLES[order.status]}`}
-                    >
-                      {ORDER_STATUS_LABELS[order.status]}
-                    </span>
-                    <span className="text-sm text-ink">{formatPence(order.total_pence)}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-ink/10 bg-white p-5">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-500" />
-            <h2 className="font-display text-lg text-ink">Low stock</h2>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {data.low_stock.length === 0 ? (
-            <p className="mt-4 text-sm text-ink-soft">Nothing running low right now.</p>
-          ) : (
-            <ul className="mt-4 divide-y divide-ink/10">
-              {data.low_stock.map((item) => (
-                <li key={item.variant_id} className="flex items-center justify-between py-3 text-sm">
-                  <div>
-                    <p className="font-medium text-ink">{item.product_name}</p>
-                    <p className="text-xs text-ink-soft">{item.sku}</p>
-                  </div>
-                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-800">
-                    {item.stock_quantity} left
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+
+          <div id="restock" className="min-w-0 scroll-mt-20 rounded-xl border border-ink/10 bg-white p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-600" aria-hidden="true" />
+              <h2 className="font-display text-lg text-ink">Needs restocking</h2>
+            </div>
+            {restockRows.length === 0 ? (
+              <p className="mt-3 text-sm text-ink-soft">Everything is well stocked.</p>
+            ) : (
+              <QuickRestock rows={restockRows} onChanged={() => mutateOps()} />
+            )}
+            {ops.out_of_stock_count > ops.out_of_stock.length && (
+              <p className="mt-3 text-xs text-ink-soft">
+                Showing {ops.out_of_stock.length} of {ops.out_of_stock_count} sold-out variants.{" "}
+                <Link href="/admin/products" className="underline hover:text-gold">
+                  See all products
+                </Link>
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

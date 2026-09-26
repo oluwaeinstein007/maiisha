@@ -68,6 +68,8 @@ class OrderSeeder extends Seeder
             $user = $customers[$def['customer']];
             $address = $user->addresses()->first();
 
+            $placedAt = now()->subDays($def['placedDaysAgo']);
+
             $lines = [];
             $subtotal = 0;
 
@@ -77,7 +79,16 @@ class OrderSeeder extends Seeder
                     ->where('size', $size)
                     ->when($colour !== null, fn ($q) => $q->where('colour', $colour))
                     ->firstOrFail();
-                $unitPrice = $variant->priceInPence();
+                // Priced as of the day it was placed, so an order from inside a past
+                // sale window carries that sale's price (and the sale that gave it).
+                $quote = $variant->quote($placedAt);
+
+                // A sale can't have priced an order placed before the sale existed.
+                if ($quote['sale'] && $quote['sale']->created_at->gt($placedAt)) {
+                    $quote = ['price' => $quote['original'], 'original' => $quote['original'], 'sale' => null];
+                }
+
+                $unitPrice = $quote['price'];
                 $lineTotal = $unitPrice * $qty;
                 $subtotal += $lineTotal;
 
@@ -88,6 +99,8 @@ class OrderSeeder extends Seeder
                     'size' => $variant->size,
                     'colour' => $variant->colour,
                     'unit_price_pence' => $unitPrice,
+                    'original_unit_price_pence' => $quote['sale'] ? $quote['original'] : null,
+                    'sale_id' => $quote['sale']?->id,
                     'quantity' => $qty,
                     'line_total_pence' => $lineTotal,
                 ];
@@ -101,8 +114,6 @@ class OrderSeeder extends Seeder
             $shipping = $subtotal >= self::FREE_SHIPPING_THRESHOLD_PENCE ? 0 : self::FLAT_SHIPPING_PENCE;
             $taxableTotal = max(0, $subtotal - $discountPence) + $shipping;
             $vatPence = $vat->vatPenceFromInclusive($taxableTotal);
-
-            $placedAt = now()->subDays($def['placedDaysAgo']);
 
             $order = Order::create([
                 'order_number' => 'MAI-'.$placedAt->format('Ymd').'-'.strtoupper(Str::random(6)),

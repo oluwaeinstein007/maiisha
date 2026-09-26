@@ -58,6 +58,8 @@ class CheckoutController extends Controller
         return response()->json([
             'subtotal_pence' => $subtotal,
             'discount_pence' => $discountPence,
+            // Already reflected in subtotal_pence — shown to the shopper as "you saved".
+            'sale_savings_pence' => $cart->savingsPence(),
             'shipping_pence' => $shipping,
             'vat_pence' => $vat,
             'total_pence' => $total,
@@ -120,15 +122,21 @@ class CheckoutController extends Controller
             ]);
 
             foreach ($cart->items as $item) {
+                $quote = $item->variant->quote();
+
                 $order->items()->create([
                     'product_variant_id' => $item->variant->id,
                     'product_name' => $item->variant->product->name,
                     'sku' => $item->variant->sku,
                     'size' => $item->variant->size,
                     'colour' => $item->variant->colour,
-                    'unit_price_pence' => $item->variant->priceInPence(),
+                    'unit_price_pence' => $quote['price'],
+                    // Kept alongside the price actually charged, so the order (and the
+                    // analytics) still know what a sale took off and which one it was.
+                    'original_unit_price_pence' => $quote['sale'] ? $quote['original'] : null,
+                    'sale_id' => $quote['sale']?->id,
                     'quantity' => $item->quantity,
-                    'line_total_pence' => $item->quantity * $item->variant->priceInPence(),
+                    'line_total_pence' => $item->quantity * $quote['price'],
                 ]);
 
                 // Stock is reserved at order creation, not at payment success, so two

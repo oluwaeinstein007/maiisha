@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { api, ApiError, fieldError } from "@/lib/api";
+import { formatPence } from "@/lib/money";
 import { Input, Select } from "@/components/ui/Field";
+import { NumberField } from "@/components/ui/NumberField";
 import { Button } from "@/components/ui/Button";
 import type { DiscountCode } from "@/lib/types";
 
@@ -26,6 +28,16 @@ export function DiscountCodeForm({ discountCode, onSaved, onCancel }: DiscountCo
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // What a £60 basket would save — the same rule checkout applies (a fixed code never takes more than the basket).
+  const basketPence = 6000;
+  const enteredValue = Number(form.value);
+  const previewDiscount =
+    !Number.isFinite(enteredValue) || enteredValue <= 0
+      ? 0
+      : form.type === "percentage"
+        ? Math.round((basketPence * enteredValue) / 100)
+        : Math.min(Math.round(enteredValue * 100), basketPence);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -76,30 +88,34 @@ export function DiscountCodeForm({ discountCode, onSaved, onCancel }: DiscountCo
           value={form.type}
           onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "percentage" | "fixed" }))}
         >
-          <option value="percentage">Percentage off</option>
-          <option value="fixed">Fixed amount off</option>
+          <option value="percentage">Percentage off (%)</option>
+          <option value="fixed">Fixed amount off (£)</option>
         </Select>
       </div>
 
-      <Input
-        label={form.type === "percentage" ? "Percentage (e.g. 10 for 10%)" : "Amount off (£)"}
-        type="number"
-        min="0"
-        step={form.type === "percentage" ? "1" : "0.01"}
+      <NumberField
+        label={form.type === "percentage" ? "Percentage (e.g. 10 for 10%)" : "Amount off the basket (£)"}
+        decimal={form.type === "fixed"}
         required
         value={form.value}
-        onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
+        onChange={(value) => setForm((f) => ({ ...f, value }))}
         error={fieldError(errors, "value")}
-        hint={form.type === "fixed" ? "Entered in pounds, stored in pence." : undefined}
+        hint={form.type === "fixed" ? "Entered in pounds, e.g. 5 for £5.00 off." : "Between 1 and 100."}
       />
 
+      {previewDiscount > 0 && (
+        <p className="rounded-md bg-cream px-3 py-2 text-sm text-ink-soft">
+          On a {formatPence(basketPence)} basket this takes{" "}
+          <span className="font-semibold text-ink">{formatPence(previewDiscount)}</span> off, leaving{" "}
+          {formatPence(basketPence - previewDiscount)}.
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
+        <NumberField
           label="Usage limit (optional)"
-          type="number"
-          min="0"
           value={form.usage_limit}
-          onChange={(e) => setForm((f) => ({ ...f, usage_limit: e.target.value }))}
+          onChange={(value) => setForm((f) => ({ ...f, usage_limit: value }))}
           error={fieldError(errors, "usage_limit")}
         />
         <Input
@@ -111,12 +127,12 @@ export function DiscountCodeForm({ discountCode, onSaved, onCancel }: DiscountCo
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-ink-soft">
+      <label className="flex min-h-11 items-center gap-3 text-sm text-ink-soft">
         <input
           type="checkbox"
           checked={form.is_active}
           onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-          className="h-4 w-4 rounded border-ink/30"
+          className="h-5 w-5 rounded border-ink/30 accent-ink"
         />
         Active
       </label>

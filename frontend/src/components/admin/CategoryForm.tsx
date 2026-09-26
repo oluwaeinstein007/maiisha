@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { api, ApiError, fieldError } from "@/lib/api";
 import { Input, Select, Textarea } from "@/components/ui/Field";
+import { NumberField } from "@/components/ui/NumberField";
 import { Button } from "@/components/ui/Button";
 import type { Category } from "@/lib/types";
 
@@ -94,11 +95,10 @@ export function CategoryForm({ category, parentOptions, onSaved, onCancel }: Cat
         onChange={(e) => setForm((f) => ({ ...f, image_path: e.target.value }))}
         error={fieldError(errors, "image_path")}
       />
-      <Input
+      <NumberField
         label="Sort order"
-        type="number"
         value={form.sort_order}
-        onChange={(e) => setForm((f) => ({ ...f, sort_order: e.target.value }))}
+        onChange={(value) => setForm((f) => ({ ...f, sort_order: value }))}
         error={fieldError(errors, "sort_order")}
       />
 

@@ -5,9 +5,11 @@ import useSWR from "swr";
 import { Pencil, Plus, XCircle } from "lucide-react";
 import { api, swrFetcher } from "@/lib/api";
 import { formatDate, formatPence } from "@/lib/money";
-import { Button } from "@/components/ui/Button";
-import { DiscountCodeForm } from "@/components/admin/DiscountCodeForm";
 import type { DiscountCode } from "@/lib/types";
+import { DiscountCodeForm } from "@/components/admin/DiscountCodeForm";
+import { IconAction } from "@/components/admin/IconAction";
+import { ResponsiveTable } from "@/components/admin/ResponsiveTable";
+import { Button } from "@/components/ui/Button";
 
 export default function AdminDiscountCodesPage() {
   const { data: codes, mutate } = useSWR<DiscountCode[]>("/api/admin/discount-codes", swrFetcher);
@@ -21,7 +23,7 @@ export default function AdminDiscountCodesPage() {
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="font-display text-2xl text-ink">Discount codes</h1>
         {editing === null && (
           <Button size="sm" onClick={() => setEditing("new")}>
@@ -43,33 +45,27 @@ export default function AdminDiscountCodesPage() {
         </div>
       )}
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-ink/10 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink-soft/60">
-            <tr>
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Value</th>
-              <th className="px-4 py-3">Usage</th>
-              <th className="px-4 py-3">Expires</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink/10">
-            {codes?.map((code) => (
-              <tr key={code.id} className="hover:bg-ink/5">
-                <td className="px-4 py-3 font-medium text-ink">{code.code}</td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {code.type === "percentage" ? `${code.value}%` : formatPence(code.value)}
-                </td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {code.usages_count ?? 0}
-                  {code.usage_limit ? ` / ${code.usage_limit}` : ""}
-                </td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {code.expires_at ? formatDate(code.expires_at) : "—"}
-                </td>
-                <td className="px-4 py-3">
+      <div className="mt-6">
+        {codes ? (
+          <ResponsiveTable
+            rows={codes}
+            getKey={(code) => code.id}
+            empty="No discount codes yet."
+            columns={[
+              { header: "Code", card: "title", cell: (code) => <span className="font-medium text-ink">{code.code}</span> },
+              {
+                header: "Value",
+                cell: (code) => (code.type === "percentage" ? `${code.value}%` : formatPence(code.value)),
+              },
+              {
+                header: "Usage",
+                cell: (code) => `${code.usages_count ?? 0}${code.usage_limit ? ` / ${code.usage_limit}` : ""}`,
+              },
+              { header: "Expires", cell: (code) => (code.expires_at ? formatDate(code.expires_at) : "—") },
+              {
+                header: "Status",
+                card: "badge",
+                cell: (code) => (
                   <span
                     className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
                       code.is_active ? "bg-green-100 text-green-800" : "bg-neutral-200 text-neutral-600"
@@ -77,33 +73,28 @@ export default function AdminDiscountCodesPage() {
                   >
                     {code.is_active ? "Active" : "Inactive"}
                   </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setEditing(code)}
-                      className="text-ink-soft/60 hover:text-ink"
-                      aria-label="Edit code"
-                    >
-                      <Pencil size={14} />
-                    </button>
+                ),
+              },
+              {
+                header: "",
+                card: "actions",
+                cell: (code) => (
+                  <div className="flex justify-end">
+                    <IconAction label={`Edit ${code.code}`} onClick={() => setEditing(code)}>
+                      <Pencil size={15} />
+                    </IconAction>
                     {code.is_active && (
-                      <button
-                        onClick={() => handleDeactivate(code.id)}
-                        className="text-ink-soft/60 hover:text-red-600"
-                        aria-label="Deactivate code"
-                      >
-                        <XCircle size={14} />
-                      </button>
+                      <IconAction danger label={`Deactivate ${code.code}`} onClick={() => handleDeactivate(code.id)}>
+                        <XCircle size={15} />
+                      </IconAction>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {codes?.length === 0 && (
-          <p className="p-6 text-center text-sm text-ink-soft">No discount codes yet.</p>
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <p className="text-sm text-ink-soft">Loading…</p>
         )}
       </div>
     </div>

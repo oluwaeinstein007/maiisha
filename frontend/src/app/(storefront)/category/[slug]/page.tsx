@@ -1,21 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
-import { api, apiResource, ApiError, buildQuery } from "@/lib/api";
-import type { Category, PaginatedResponse, Product } from "@/lib/types";
-import { ProductGrid } from "@/components/product/ProductCard";
-import { ProductFilterBar } from "@/components/product/ProductFilterBar";
-import { Pagination } from "@/components/ui/Pagination";
+import { apiResource, ApiError } from "@/lib/api";
+import { loadListing } from "@/lib/listing";
+import type { Category } from "@/lib/types";
+import { ProductListing } from "@/components/product/listing/ProductListing";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | undefined>>;
 }
-
-const EMPTY_RESULTS: PaginatedResponse<Product> = {
-  data: [],
-  meta: { current_page: 1, last_page: 1, per_page: 24, total: 0 },
-};
 
 async function getCategory(slug: string): Promise<Category | null> {
   try {
@@ -33,37 +26,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const category = await getCategory(slug);
   if (!category) notFound();
 
-  const page = Number(query.page ?? "1");
-
-  let products: PaginatedResponse<Product>;
-  let loadError = false;
-  try {
-    products = await api.get<PaginatedResponse<Product>>(
-      `/api/products${buildQuery({
-        category: slug,
-        size: query.size,
-        colour: query.colour,
-        min_price: query.min_price,
-        max_price: query.max_price,
-        sort: query.sort,
-        page,
-      })}`,
-    );
-  } catch {
-    products = EMPTY_RESULTS;
-    loadError = true;
-  }
-
-  const buildHref = (targetPage: number) => {
-    const params = new URLSearchParams(query as Record<string, string>);
-    params.set("page", String(targetPage));
-    return `?${params.toString()}`;
-  };
+  const scope = { category: slug };
+  const data = await loadListing(scope, query);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <nav className="text-xs text-ink-soft/70">
-        <Link href="/" className="hover:text-gold">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <nav aria-label="Breadcrumb" className="text-xs text-ink-soft/70">
+        <Link href="/" className="inline-flex min-h-10 items-center hover:text-gold">
           Home
         </Link>
         <span className="mx-1.5">/</span>
@@ -76,12 +45,12 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       )}
 
       {category.children && category.children.length > 0 && (
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="scrollbar-hide -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
           {category.children.map((child) => (
             <Link
               key={child.id}
               href={`/category/${child.slug}`}
-              className="rounded-full border border-ink/15 px-3.5 py-1.5 text-xs text-ink-soft hover:border-gold hover:text-gold"
+              className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-ink/15 px-4 text-sm text-ink-soft hover:border-gold hover:text-gold"
             >
               {child.name}
             </Link>
@@ -89,23 +58,9 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         </div>
       )}
 
-      <div className="mt-8">
-        <ProductFilterBar category={slug} />
+      <div className="mt-6">
+        <ProductListing data={data} scope={scope} query={query} />
       </div>
-
-      {loadError ? (
-        <div className="mt-10 flex flex-col items-center gap-2 rounded-xl border border-ink/10 py-16 text-center">
-          <AlertTriangle size={24} className="text-gold" />
-          <p className="text-sm text-ink-soft">
-            We couldn&apos;t load products right now. Please try again in a moment.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-8">
-          <ProductGrid products={products.data} />
-          <Pagination meta={products.meta} buildHref={buildHref} />
-        </div>
-      )}
     </div>
   );
 }

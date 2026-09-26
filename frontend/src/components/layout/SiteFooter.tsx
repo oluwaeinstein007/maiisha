@@ -16,15 +16,20 @@ export function SiteFooter() {
 
           <div>
             <p className="text-sm font-semibold text-gold">Shop</p>
-            <ul className="mt-3 space-y-2 text-sm text-cream/70">
+            <ul className="mt-2 text-sm text-cream/70">
               <li>
-                <Link href="/" className="hover:text-gold">
+                <Link href="/search" className="inline-flex min-h-10 items-center hover:text-gold">
                   All products
                 </Link>
               </li>
               <li>
-                <Link href="/search" className="hover:text-gold">
-                  Search
+                <Link href="/sale" className="inline-flex min-h-10 items-center hover:text-gold">
+                  Sale
+                </Link>
+              </li>
+              <li>
+                <Link href="/brands" className="inline-flex min-h-10 items-center hover:text-gold">
+                  Brands
                 </Link>
               </li>
             </ul>
@@ -32,19 +37,19 @@ export function SiteFooter() {
 
           <div>
             <p className="text-sm font-semibold text-gold">Account</p>
-            <ul className="mt-3 space-y-2 text-sm text-cream/70">
+            <ul className="mt-2 text-sm text-cream/70">
               <li>
-                <Link href="/account/orders" className="hover:text-gold">
+                <Link href="/account/orders" className="inline-flex min-h-10 items-center hover:text-gold">
                   Order tracking
                 </Link>
               </li>
               <li>
-                <Link href="/account/addresses" className="hover:text-gold">
+                <Link href="/account/addresses" className="inline-flex min-h-10 items-center hover:text-gold">
                   Addresses
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-gold">
+                <Link href="/login" className="inline-flex min-h-10 items-center hover:text-gold">
                   Sign in
                 </Link>
               </li>
@@ -53,10 +58,10 @@ export function SiteFooter() {
 
           <div>
             <p className="text-sm font-semibold text-gold">Support</p>
-            <ul className="mt-3 space-y-2 text-sm text-cream/70">
-              <li>Delivery: Royal Mail, DPD, Evri, DHL</li>
-              <li>UK VAT included at checkout</li>
-              <li>Secure payments by Stripe</li>
+            <ul className="mt-2 text-sm text-cream/70">
+              <li className="py-1.5">Delivery: Royal Mail, DPD, Evri, DHL</li>
+              <li className="py-1.5">UK VAT included at checkout</li>
+              <li className="py-1.5">Secure payments by Stripe</li>
             </ul>
           </div>
         </div>

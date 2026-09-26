@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\DiscountCode;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -16,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategorySeeder::class,
             ProductSeeder::class,
+            BrandSeeder::class,
         ]);
 
         // Keyed by the unique column (email/code) so re-running `db:seed` against
@@ -30,13 +30,12 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Demo Customer', 'password' => bcrypt('password'), 'role' => 'customer'],
         );
 
-        DiscountCode::updateOrCreate(
-            ['code' => 'WELCOME10'],
-            ['type' => 'percentage', 'value' => 10, 'usage_limit' => null, 'is_active' => true],
-        );
-
+        // Sales go in before the orders: OrderSeeder prices each demo order as of the
+        // day it was placed, so the past sale below shows up in their history.
         $this->call([
+            DiscountCodeSeeder::class,
             CustomerSeeder::class,
+            SaleSeeder::class,
             OrderSeeder::class,
         ]);
     }

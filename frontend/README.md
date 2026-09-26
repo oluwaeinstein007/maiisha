@@ -6,7 +6,9 @@ Customer storefront and admin dashboard for **MAI_ISHA Fashion & Beauty Sphere**
 
 ### Storefront
 
-- Home, category browsing (with nested subcategories, filters, sort), full-text search
+- Home, category browsing (nested subcategories), full-text search — with a rebuilt filter experience: size/colour multi-select with swatches, price bands + range, in-stock / on-sale toggles, sort, removable filter chips, and a phone bottom-sheet with a live "Show N results" count. The URL is the only state, so any filtered view can be shared and Back works
+- Sales: an announcement banner while a sale is live, a `/sale` page, sale badges and struck-through prices, and the saving shown in the cart and checkout
+- Brands: a `/brands` page, a page per brand (`/brand/[slug]`), a Brand filter, and the brand shown on products
 - Product detail with size/colour variant selection and live stock status
 - Persistent cart — works for guests, merges into the account on login/register
 - Checkout: address book, discount codes, itemised UK VAT, Stripe Elements payment
@@ -14,11 +16,16 @@ Customer storefront and admin dashboard for **MAI_ISHA Fashion & Beauty Sphere**
 
 ### Admin dashboard
 
-- Sales overview with low-stock and out-of-stock alerts
-- Product management: details, variants (size/colour/price/stock), image upload
+- Dashboard: revenue, orders and average order value against the previous period, revenue chart, sales running now, low-stock / out-of-stock / awaiting-payment alerts — every row (recent orders, low stock, sales) is a full clickable link through to the thing it names
+- A notification bell (`/admin/notifications`, polled every 30s): new paid orders, low/out-of-stock variants, checkouts stuck on pending payment for 2+ hours, and sales ending within a day. Opening it clears the unread badge; items stay listed either way
+- Customers (`/admin/customers`): search, paid order count and total spent per customer; a detail page with their orders, addresses, and a form to email them directly (not an order-status notification — a one-off message, e.g. "checking your order arrived OK")
+- Analytics (`/admin/analytics`): range presets or custom dates, KPI tiles, revenue over time, top products, revenue by category, best weekdays, orders by status, where the money went, sale and discount-code performance, CSV export. Every chart has a table view
+- Sales management (`/admin/sales`): create a sale as a draft, choose what it covers (whole shop, or any mix of lines, brands and products), add items later, then **Activate** / **Deactivate** it. Manual by default (Christmas, Ileya, Black Friday); "Between dates" and "Weekly" are optional. Live price preview
+- Brands (`/admin/brands`): create/edit/show-hide/delete brands with a logo upload; assign a brand on the product form
+- Discount codes: percentage or fixed £ amount, with a live "on a £60 basket" preview
+- Product management: details, variants (size/colour/price/stock), image upload, and delete — blocked (409) for a product with order history, so a founder is pointed at "deactivate" instead of losing the record behind past orders
 - Category management (nested)
-- Order management with status updates
-- Discount code management
+- Order management: list with a "View" action per row, status updates with the customer notified by email/SMS
 
 ## Tech stack
 
@@ -75,7 +82,7 @@ src/
     admin/(dashboard)/ everything else under /admin, behind RequireAuth admin
   components/          organised by domain (product, checkout, admin, account, ui…)
   context/             AuthContext, CartContext — app-wide client state
-  lib/                 api client, money/date formatting, shared types
+  lib/                 api client, money/date formatting, shared types; productFilters.ts (URL ⇄ filter state)
 ```
 
 ## Architecture notes
@@ -100,6 +107,22 @@ This isn't fully uniform across the API — e.g. `/api/admin/discount-codes` ret
 ### Admin write payloads
 
 A few field names on the admin API aren't what you'd guess from the read-side resources — notably variants take `price_override_pence` (not `price_pence`), and a discount code's `value` is pence for `type: "fixed"` but raw percentage points for `type: "percentage"`. See the admin form components under `src/components/admin/` for the exact shapes in use.
+
+### Auth guard
+
+`RequireAuth admin` never redirects a signed-in non-admin silently — it shows an "Admin access only" page naming the account, with "Sign in as an admin" (signs out, then goes to `/admin/login`). `LoginForm adminOnly` (the admin sign-in page) signs out and refuses a customer account instead of sending it into `/admin` to be bounced.
+
+### Images from a local backend
+
+`lib/image.ts` `isUnoptimizedImage` loads images hosted on localhost/private addresses directly in the browser. Next's image optimizer refuses private IPs (SSRF protection), and from inside the Docker frontend container `localhost` isn't the backend — so without this every uploaded product photo and brand logo is a broken image on a dev machine. Public production hosts still go through the optimizer.
+
+### Product filters
+
+`lib/productFilters.ts` is the single place that converts between the URL and filter state; the server page (which fetches) and the client filter UI (which edits) both use it. `components/product/listing/` holds `ListingShell` (sidebar / toolbar / chips, updating the URL with `router.replace` inside a transition so the old results dim instead of vanishing), `FilterSections` (shared by the desktop sidebar and the mobile sheet), and `FilterSheet`. Adding a new filter = a param in `lib/productFilters.ts`, a section in `FilterSections`, and support in the backend `ProductController`.
+
+### Charts
+
+The analytics charts are hand-rolled SVG/HTML in `components/admin/charts/` (no charting dependency). Colours are CSS variables on `.viz` in `globals.css`, chosen and validated per the dataviz method (the accent `#a8842a` is the lightest brand-gold that clears 3:1 on white; brand gold `#c8a24a` is only 2.4:1). Every chart has a table view, and tooltips also work from the keyboard.
 
 ### Money, status, images
 

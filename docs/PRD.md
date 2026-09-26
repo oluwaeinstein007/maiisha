@@ -62,7 +62,7 @@ Each category supports subcategories, filters (size, colour, price) and sort (pr
 
 ### 4.1 Storefront
 - FR-1: Home page showcasing featured products, categories, and promotions, on-brand (black & gold).
-- FR-2: Category and subcategory browsing with filtering and sorting.
+- FR-2: Category and subcategory browsing with filtering (size, colour, brand, price, availability, on-sale — several values at once, shareable by URL) and sorting.
 - FR-3: Product detail page: images, description, price (GBP), size/variant selection, stock availability, add-to-cart.
 - FR-4: Search across the catalogue.
 - FR-5: Responsive layout — desktop, tablet, mobile.
@@ -92,8 +92,10 @@ Each category supports subcategories, filters (size, colour, price) and sort (pr
 - FR-19: Shipping integrates with a multi-courier platform to generate labels/tracking, supporting **Royal Mail, DPD, Evri, and DHL** (see §7.4).
 
 ### 4.7 Discounts
-- FR-20: Admin can create, edit, and deactivate discount codes (percentage or fixed amount, with optional expiry date and usage limits).
+- FR-20: Admin can create, edit, and deactivate discount codes — either a **percentage** off or a **fixed £ amount** off — with optional expiry date and usage limits.
 - FR-21: Customers can apply one discount code per order at checkout.
+- FR-30: Admin can create **sales** (Christmas, Ileya, Black Friday, Boxing Day, "Monday deals"…): a percentage or fixed amount off, applied to the whole shop or to a selection of **lines (categories), brands and individual products** in any mix. A sale can be created as a draft, edited and have items added at any time, and is then **switched on and off by the admin (manual — the default, and how seasonal campaigns such as Christmas, Ileya and Black Friday work)**. Optionally a sale can instead run by itself between two dates, or repeat on chosen weekdays (a "Monday deal"). No code is needed; while a sale is live the reduced price applies everywhere (listings, product page, cart, checkout, order). Where several sales overlap the best price wins (they don't stack); a discount code still applies on top of the sale price.
+- FR-31: The storefront makes live sales visible: an announcement banner, a Sale page, a sale badge and struck-through original price on products, and the saving shown in the cart, checkout and order history.
 
 ### 4.8 Stock & Inventory
 - FR-22: Admin can set and adjust stock levels per product/variant.
@@ -106,6 +108,10 @@ Each category supports subcategories, filters (size, colour, price) and sort (pr
 - FR-27: Manage stock levels.
 - FR-28: Manage discount codes.
 - FR-29: Basic sales overview (orders, revenue) for the founder's own visibility.
+- FR-32: Analytics for a chosen period (last 7/30/90 days, 12 months, year to date, or custom), compared with the previous equal period: revenue, orders, average order value, units sold, new vs returning customers and sign-ups; revenue over time; top products; revenue by category; best days of the week; orders by status; where the money went (list price → sale savings → discount codes → shipping → VAT); and how each sale and discount code performed. Days are UK days.
+- FR-33: Admin can export the paid orders of a period as a CSV (for bookkeeping / VAT returns).
+- FR-34: The admin dashboard is fully usable on a phone (responsive layout, touch-sized controls).
+- FR-35: **Brands.** Admin can create, edit, show/hide and delete brands (name, description, logo, display order) and assign a brand to each product. The storefront offers a Brands page, a page per brand, a Brand filter alongside size/colour/price, and shows the brand on products; a sale can target a whole brand. A brand that still has products can't be deleted (hide it instead).
 
 ---
 
@@ -172,6 +178,7 @@ Email (transactional email provider) and SMS (transactional SMS provider) integr
 - Logo: not yet supplied — brand colours (black & gold) confirmed. Wordmark fallback to be used if no logo is provided by design phase.
 - A recurring **service/transaction fee** (beyond standard payment-processor fees) was raised in discussion but not finalised — to be confirmed before contract signing.
 - Maintenance rate after the free 3-month post-launch period is not yet fixed and will be quoted based on actual request volume/complexity once the site is live.
+- **Seasonal sales are manual:** Christmas, Ileya (which follows the moon sighting and moves ~11 days earlier each year), Black Friday and similar campaigns are created and switched on/off by the admin — nothing starts on its own unless the admin chooses dates or weekdays. Any dates, "Monday deals" and analytics days are evaluated in UK time (Europe/London).
 - Server sizing (§7.2) starts at 2GB+ RAM based on running app, queue, scheduler and database together; this will be reviewed and scaled up if order/traffic volume grows.
 
 ---

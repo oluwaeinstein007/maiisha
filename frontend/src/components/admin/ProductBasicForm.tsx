@@ -4,8 +4,9 @@ import { useState, type FormEvent } from "react";
 import useSWR from "swr";
 import { apiResource, ApiError, fieldError, swrFetcherResource } from "@/lib/api";
 import { Input, Select, Textarea } from "@/components/ui/Field";
+import { NumberField } from "@/components/ui/NumberField";
 import { Button } from "@/components/ui/Button";
-import type { Category, Product } from "@/lib/types";
+import type { Brand, Category, Product } from "@/lib/types";
 
 interface ProductBasicFormProps {
   product?: Product;
@@ -14,9 +15,11 @@ interface ProductBasicFormProps {
 
 export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
   const { data: categories } = useSWR<Category[]>("/api/categories", swrFetcherResource);
+  const { data: brands } = useSWR<Brand[]>("/api/admin/brands", swrFetcherResource);
 
   const [form, setForm] = useState({
     category_id: product?.category_id ?? product?.category.id ?? "",
+    brand_id: product?.brand_id ? String(product.brand_id) : "",
     name: product?.name ?? "",
     description: product?.description ?? "",
     price: product ? (product.price_pence / 100).toFixed(2) : "",
@@ -38,6 +41,7 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
 
     const payload = {
       category_id: Number(form.category_id),
+      brand_id: form.brand_id ? Number(form.brand_id) : null,
       name: form.name,
       description: form.description || null,
       price_pence: Math.round(Number(form.price) * 100),
@@ -88,6 +92,22 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
         ))}
       </Select>
 
+      <Select
+        label="Brand (optional)"
+        value={form.brand_id}
+        onChange={(e) => setForm((f) => ({ ...f, brand_id: e.target.value }))}
+        error={fieldError(errors, "brand_id")}
+        hint="Manage brands under Brands in the menu."
+      >
+        <option value="">No brand</option>
+        {brands?.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.name}
+            {b.is_active ? "" : " (hidden)"}
+          </option>
+        ))}
+      </Select>
+
       <Textarea
         label="Description"
         value={form.description}
@@ -95,43 +115,41 @@ export function ProductBasicForm({ product, onSaved }: ProductBasicFormProps) {
         error={fieldError(errors, "description")}
       />
 
-      <Input
+      <NumberField
         label="Base price (£)"
-        type="number"
-        min="0"
-        step="0.01"
+        decimal
         required
         value={form.price}
-        onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+        onChange={(value) => setForm((f) => ({ ...f, price: value }))}
         error={fieldError(errors, "price_pence")}
         hint="Variants can override this price individually."
       />
 
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-sm text-ink-soft">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:gap-x-6">
+        <label className="flex min-h-11 items-center gap-3 text-sm text-ink-soft">
           <input
             type="checkbox"
             checked={form.is_featured}
             onChange={(e) => setForm((f) => ({ ...f, is_featured: e.target.checked }))}
-            className="h-4 w-4 rounded border-ink/30"
+            className="h-5 w-5 rounded border-ink/30 accent-ink"
           />
           Featured on homepage
         </label>
-        <label className="flex items-center gap-2 text-sm text-ink-soft">
+        <label className="flex min-h-11 items-center gap-3 text-sm text-ink-soft">
           <input
             type="checkbox"
             checked={form.is_active}
             onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-            className="h-4 w-4 rounded border-ink/30"
+            className="h-5 w-5 rounded border-ink/30 accent-ink"
           />
           Active (visible in store)
         </label>
-        <label className="flex items-center gap-2 text-sm text-ink-soft">
+        <label className="flex min-h-11 items-center gap-3 text-sm text-ink-soft">
           <input
             type="checkbox"
             checked={form.hide_when_out_of_stock}
             onChange={(e) => setForm((f) => ({ ...f, hide_when_out_of_stock: e.target.checked }))}
-            className="h-4 w-4 rounded border-ink/30"
+            className="h-5 w-5 rounded border-ink/30 accent-ink"
           />
           Hide from store when out of stock
         </label>

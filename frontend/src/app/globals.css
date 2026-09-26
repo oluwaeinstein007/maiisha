@@ -14,6 +14,8 @@
   --color-ink-soft: #1c1b1a;
   --color-gold: #c8a24a;
   --color-gold-soft: #e6d3a3;
+  /* Gold for TEXT on light backgrounds — brand gold is ~2.4:1 there (fails 4.5:1). */
+  --color-gold-deep: #8a6a14;
   --color-cream: #faf7f0;
 
   --font-sans: var(--font-body);
@@ -37,4 +39,64 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Bottom sheet (mobile filters) slides up; skipped for reduced-motion users. */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-sheet-up {
+  animation: sheet-up 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-up {
+    animation: none;
+  }
+}
+
+/*
+ * Chart tokens (admin analytics). Values follow the dataviz method and were
+ * checked, not eyeballed: the accent is the lightest brand-gold step that clears
+ * 3:1 against the white card (brand gold #c8a24a is only 2.4:1); text tokens
+ * clear 4.5:1. The app has no dark theme, so these are light-only — a dark theme
+ * would override these variables on .viz, nothing else.
+ */
+.viz {
+  --viz-surface: #ffffff;
+  --viz-ink: #0b0b0c;
+  --viz-ink-2: #52514e;
+  --viz-ink-3: #6f6d68;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-accent: #a8842a;
+  --viz-context: #8e8c85;
+  --viz-up: #006300;
+  --viz-down: #d03b3b;
+}
+
+/* Admin mobile navigation drawer slides in from the left. */
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-drawer-in {
+  animation: drawer-in 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drawer-in {
+    animation: none;
+  }
 }

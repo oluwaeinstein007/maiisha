@@ -4,6 +4,9 @@ import Link from "next/link";
 import { apiResource, ApiError } from "@/lib/api";
 import type { Product } from "@/lib/types";
 import { ProductDetail } from "@/components/product/ProductDetail";
+import { RelatedProducts } from "@/components/product/RelatedProducts";
+import { ProductReviews } from "@/components/product/ProductReviews";
+import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -49,6 +52,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </nav>
       </div>
       <ProductDetail product={product} />
+      <ProductReviews slug={product.slug} />
+      <RelatedProducts slug={product.slug} />
+      <RecentlyViewed slug={product.slug} />
     </div>
   );
 }

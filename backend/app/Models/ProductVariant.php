@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\SalePricing;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,14 +21,45 @@ class ProductVariant extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Restocked from nothing: tell everyone waiting on this product (once each).
+        static::updated(function (ProductVariant $variant) {
+            if ($variant->wasChanged('stock_quantity')
+                && (int) $variant->getOriginal('stock_quantity') <= 0
+                && $variant->stock_quantity > 0
+                && $variant->is_active) {
+                $variant->product->notifyBackInStock();
+            }
+        });
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function priceInPence(): int
+    /** The normal, pre-sale price: this variant's override, else the product's. */
+    public function basePriceInPence(): int
     {
         return $this->price_override_pence ?? $this->product->price_pence;
+    }
+
+    /**
+     * Price and any sale behind it, as of now (or $at):
+     * ['price' => what's charged, 'original' => the normal price, 'sale' => ?Sale].
+     *
+     * @return array{price: int, original: int, sale: ?Sale}
+     */
+    public function quote(?CarbonInterface $at = null): array
+    {
+        return app(SalePricing::class)->quote($this->product, $this->basePriceInPence(), $at);
+    }
+
+    /** What the customer pays for one unit — the sale price while a sale is live. */
+    public function priceInPence(): int
+    {
+        return $this->quote()['price'];
     }
 
     public function isLowStock(): bool

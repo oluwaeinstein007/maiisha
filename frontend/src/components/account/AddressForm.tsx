@@ -149,12 +149,12 @@ export function AddressForm({ address, onSaved, onCancel }: AddressFormProps) {
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-ink-soft">
+      <label className="flex min-h-11 items-center gap-3 text-sm text-ink-soft">
         <input
           type="checkbox"
           checked={form.is_default}
           onChange={update("is_default")}
-          className="h-4 w-4 rounded border-ink/30"
+          className="h-5 w-5 rounded border-ink/30 accent-ink"
         />
         Set as default address
       </label>

@@ -3,21 +3,107 @@
 import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
-import { Plus } from "lucide-react";
-import { swrFetcher, buildQuery } from "@/lib/api";
-import { formatPence } from "@/lib/money";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { api, ApiError, swrFetcher, buildQuery } from "@/lib/api";
+import type { PaginatedResponse, Product } from "@/lib/types";
+import { IconAction } from "@/components/admin/IconAction";
+import { PaginationControls } from "@/components/admin/PaginationControls";
+import { ResponsiveTable, type TableColumn } from "@/components/admin/ResponsiveTable";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
-import type { PaginatedResponse, Product } from "@/lib/types";
+import { PriceTag } from "@/components/ui/PriceTag";
 
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const { data } = useSWR<PaginatedResponse<Product>>(
+  const { data, mutate } = useSWR<PaginatedResponse<Product>>(
     `/api/admin/products${buildQuery({ search, page, per_page: 20 })}`,
     swrFetcher,
+    { keepPreviousData: true },
   );
+
+  const handleDelete = async (product: Product) => {
+    if (!confirm(`Delete “${product.name}”? This can't be undone.`)) return;
+    setActionError(null);
+    setDeletingId(product.id);
+    try {
+      await api.delete(`/api/admin/products/${product.id}`);
+      await mutate();
+    } catch (err) {
+      // A product with order history is refused (409) with a message explaining
+      // why — surface that verbatim rather than a generic "something went wrong".
+      setActionError(err instanceof ApiError ? err.message : "Could not delete that product.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const columns: TableColumn<Product>[] = [
+    {
+      header: "Product",
+      card: "title",
+      cell: (product) => (
+        <Link href={`/admin/products/${product.id}`} className="font-medium text-ink hover:text-gold">
+          {product.name}
+        </Link>
+      ),
+    },
+    { header: "Category", cell: (product) => product.category.name },
+    { header: "Brand", cell: (product) => product.brand?.name ?? "—" },
+    {
+      // The price a shopper pays right now: while a sale is running this shows the
+      // sale price with the normal one struck through, so it's clear why it differs
+      // from the price you set.
+      header: "Price",
+      cell: (product) => <PriceTag price={product.min_price_pence} compareAt={product.compare_at_price_pence} />,
+    },
+    {
+      header: "Stock",
+      cell: (product) =>
+        product.in_stock === false ? (
+          <span className="text-red-600">
+            Out of stock
+            {product.hide_when_out_of_stock && <span className="ml-1 text-ink-soft/60">(hidden)</span>}
+          </span>
+        ) : (
+          "In stock"
+        ),
+    },
+    {
+      header: "Status",
+      card: "badge",
+      cell: (product) => (
+        <span
+          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+            product.is_active === false ? "bg-neutral-200 text-neutral-600" : "bg-green-100 text-green-800"
+          }`}
+        >
+          {product.is_active === false ? "Inactive" : "Active"}
+        </span>
+      ),
+    },
+    {
+      header: "",
+      card: "actions",
+      cell: (product) => (
+        <div className="flex justify-end">
+          <IconAction label={`Edit ${product.name}`} href={`/admin/products/${product.id}`}>
+            <Pencil size={15} />
+          </IconAction>
+          <IconAction danger label={`Delete ${product.name}`} onClick={() => handleDelete(product)}>
+            {deletingId === product.id ? (
+              <span aria-hidden="true" className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Trash2 size={15} />
+            )}
+          </IconAction>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -32,6 +118,8 @@ export default function AdminProductsPage() {
 
       <div className="mt-4 max-w-sm">
         <Input
+          type="search"
+          aria-label="Search products"
           placeholder="Search products…"
           value={search}
           onChange={(e) => {
@@ -41,79 +129,21 @@ export default function AdminProductsPage() {
         />
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-ink/10 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink-soft/60">
-            <tr>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Stock</th>
-              <th className="px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink/10">
-            {data?.data.map((product) => (
-              <tr key={product.id} className="hover:bg-ink/5">
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/admin/products/${product.id}`}
-                    className="font-medium text-ink hover:text-gold"
-                  >
-                    {product.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-ink-soft">{product.category.name}</td>
-                <td className="px-4 py-3 text-ink-soft">{formatPence(product.min_price_pence)}</td>
-                <td className="px-4 py-3 text-ink-soft">
-                  {product.in_stock === false ? (
-                    <span className="text-red-600">
-                      Out of stock
-                      {product.hide_when_out_of_stock && (
-                        <span className="ml-1 text-ink-soft/60">(hidden)</span>
-                      )}
-                    </span>
-                  ) : (
-                    "In stock"
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                      product.is_active === false
-                        ? "bg-neutral-200 text-neutral-600"
-                        : "bg-green-100 text-green-800"
-                    }`}
-                  >
-                    {product.is_active === false ? "Inactive" : "Active"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {data?.data.length === 0 && (
-          <p className="p-6 text-center text-sm text-ink-soft">No products found.</p>
+      {actionError && (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          {actionError}
+        </p>
+      )}
+
+      <div className="mt-6">
+        {data ? (
+          <ResponsiveTable rows={data.data} columns={columns} getKey={(product) => product.id} empty="No products found." />
+        ) : (
+          <p className="text-sm text-ink-soft">Loading…</p>
         )}
       </div>
 
-      {data && data.meta.last_page > 1 && (
-        <div className="mt-6 flex justify-center gap-2">
-          {Array.from({ length: data.meta.last_page }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={
-                p === data.meta.current_page
-                  ? "flex h-9 w-9 items-center justify-center rounded-full bg-ink text-sm text-cream"
-                  : "flex h-9 w-9 items-center justify-center rounded-full text-sm text-ink-soft hover:bg-ink/5"
-              }
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      )}
+      {data && <PaginationControls page={data.meta.current_page} lastPage={data.meta.last_page} onChange={setPage} />}
     </div>
   );
 }

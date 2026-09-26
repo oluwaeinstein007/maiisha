@@ -159,9 +159,15 @@ function CheckoutFlow() {
                 <dt>Subtotal</dt>
                 <dd className="text-ink">{formatPence(preview.subtotal_pence)}</dd>
               </div>
+              {preview.sale_savings_pence > 0 && (
+                <div className="flex justify-between text-emerald-700">
+                  <dt>Sale savings (included)</dt>
+                  <dd>−{formatPence(preview.sale_savings_pence)}</dd>
+                </div>
+              )}
               {preview.discount_pence > 0 && (
                 <div className="flex justify-between text-ink-soft">
-                  <dt>Discount</dt>
+                  <dt>Discount code</dt>
                   <dd className="text-ink">-{formatPence(preview.discount_pence)}</dd>
                 </div>
               )}

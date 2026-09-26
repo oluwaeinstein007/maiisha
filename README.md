@@ -26,7 +26,17 @@ docker compose exec backend php artisan migrate
 
 The app is then reachable at `http://localhost:8080` (nginx routes `/api`, `/up`, and `/storage` to the backend; everything else to the Next.js frontend). Postgres is not published to the host, per PRD §7.2.
 
-Storefront: `http://localhost:8080/` — Admin dashboard: `http://localhost:8080/admin`
+### Where things are
+
+| | Local (Docker) | Local (`pnpm dev`) | Production |
+|---|---|---|---|
+| Storefront | `http://localhost:8080/` | `http://localhost:3000/` | `https://<your-domain>/` |
+| **Admin dashboard** | **`http://localhost:8080/admin`** | `http://localhost:3000/admin` | `https://<your-domain>/admin` |
+| Admin sign-in | `/admin/login` | `/admin/login` | `/admin/login` |
+
+`/admin` redirects to `/admin/login` when you're signed out. The admin isn't linked from the public site on purpose — bookmark it. Only accounts with the `admin` role get in: if you're signed in with a *customer* account you'll see an "Admin access only" page (naming the account) with a button to sign in as an admin instead, and the admin sign-in form refuses customer accounts. The seeded admin is in the table below; **change that password before going live**.
+
+Inside the admin: **Dashboard** (revenue at a glance, alerts, all clickable), a **notification bell** (new orders, low/out-of-stock, stuck checkouts, sales ending soon), **Analytics** (charts, top products, CSV export), **Products** (edit/delete, blocked once a product has order history), **Categories**, **Brands** (with logos), **Orders** (view + status updates), **Customers** (order history, addresses, and a way to email one directly), **Sales** (create → add lines/brands/products → activate) and **Discount codes** (percentage or fixed £ amount).
 
 To seed demo data (categories, products, a discount code, an admin + demo customer account, 10 realistic customers with addresses, and a spread of orders across the order lifecycle): the backend image is built with `composer install --no-dev`, so `fakerphp/faker` (used by `UserFactory`) isn't in it by default. Rebuild with the dev override first, which installs dev dependencies for `backend`/`queue`/`scheduler`:
 
@@ -41,6 +51,25 @@ docker compose exec backend php artisan db:seed
 | Customer | `customer@maiisha.test` | `password` |
 
 (Seeded customers in `CustomerSeeder` also use `password` — see that file for their emails.)
+
+### Upgrading an existing install
+
+If you already have a running stack and pull these changes (sales, analytics, filters, notifications, customers), rebuild the images and run the new migrations — they only add tables/columns, nothing existing is altered or dropped:
+
+```sh
+docker compose up --build -d
+docker compose exec backend php artisan migrate --force
+# optional demo data — all idempotent, safe to re-run (brands first: the sales refer to them)
+docker compose exec backend php artisan db:seed --class=BrandSeeder --force
+docker compose exec backend php artisan db:seed --class=DiscountCodeSeeder --force
+docker compose exec backend php artisan db:seed --class=SaleSeeder --force
+```
+
+If `docker compose up --build -d` recreated the `backend` or `frontend` container and the site then 502s, nginx is holding the old container IP — `docker compose restart nginx` fixes it.
+
+The demo sales: *Christmas Sale*, *Ileya Sale* and *Black Friday* are seeded as **inactive drafts with no dates** — nothing starts by itself; open one under Sales, adjust it, and hit **Activate**. *Autumn Style Sale* is live (manual, no end date), *Monday Deals* repeats on Mondays, and *Summer Clearance* is a past sale. `BrandSeeder` also gives every existing product without a brand a demo one (it never overwrites a brand you've set).
+
+Times for sales ("starts at midnight on 1 Dec", "Monday deal", daily analytics) use the shop's timezone, `Europe/London` by default — set `SHOP_TIMEZONE` in `backend/.env` to change it.
 
 ### Switching between the plain and dev-override builds
 

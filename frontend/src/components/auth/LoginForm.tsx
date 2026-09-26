@@ -8,8 +8,15 @@ import { ApiError, fieldError } from "@/lib/api";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 
-export function LoginForm({ defaultRedirect = "/account" }: { defaultRedirect?: string }) {
-  const { login } = useAuth();
+export function LoginForm({
+  defaultRedirect = "/account",
+  adminOnly = false,
+}: {
+  defaultRedirect?: string;
+  /** The admin sign-in page: refuse a valid customer login rather than sending it into /admin to be bounced. */
+  adminOnly?: boolean;
+}) {
+  const { login, logout } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -25,7 +32,14 @@ export function LoginForm({ defaultRedirect = "/account" }: { defaultRedirect?: 
     setFormError(null);
     setErrors({});
     try {
-      await login(email, password);
+      const user = await login(email, password);
+
+      if (adminOnly && user.role !== "admin") {
+        await logout();
+        setFormError("That account doesn't have admin access. Please sign in with an admin account.");
+        return;
+      }
+
       router.push(searchParams.get("redirect") ?? defaultRedirect);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -41,8 +55,10 @@ export function LoginForm({ defaultRedirect = "/account" }: { defaultRedirect?: 
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-16 sm:px-6">
-      <h1 className="font-display text-3xl text-ink">Sign in</h1>
-      <p className="mt-2 text-sm text-ink-soft">Welcome back to MAI_ISHA.</p>
+      <h1 className="font-display text-3xl text-ink">{adminOnly ? "Admin sign in" : "Sign in"}</h1>
+      <p className="mt-2 text-sm text-ink-soft">
+        {adminOnly ? "MAI_ISHA store management." : "Welcome back to MAI_ISHA."}
+      </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <Input
@@ -65,7 +81,7 @@ export function LoginForm({ defaultRedirect = "/account" }: { defaultRedirect?: 
         {formError && <p className="text-sm text-red-600">{formError}</p>}
 
         <div className="flex items-center justify-between text-xs">
-          <Link href="/forgot-password" className="text-ink-soft hover:text-gold">
+          <Link href="/forgot-password" className="inline-flex min-h-10 items-center text-ink-soft hover:text-gold">
             Forgot password?
           </Link>
         </div>
@@ -75,12 +91,14 @@ export function LoginForm({ defaultRedirect = "/account" }: { defaultRedirect?: 
         </Button>
       </form>
 
-      <p className="mt-6 text-sm text-ink-soft">
-        New to MAI_ISHA?{" "}
-        <Link href="/register" className="font-medium text-ink hover:text-gold">
-          Create an account
-        </Link>
-      </p>
+      {!adminOnly && (
+        <p className="mt-6 text-sm text-ink-soft">
+          New to MAI_ISHA?{" "}
+          <Link href="/register" className="font-medium text-ink hover:text-gold">
+            Create an account
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

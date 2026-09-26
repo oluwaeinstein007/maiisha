@@ -8,13 +8,21 @@ import useSWR from "swr";
 import { Search, SearchX } from "lucide-react";
 import { api, buildQuery } from "@/lib/api";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
-import { formatPence } from "@/lib/money";
 import { isUnoptimizedImage } from "@/lib/image";
+import { PriceTag } from "@/components/ui/PriceTag";
 import type { PaginatedResponse, Product } from "@/lib/types";
 
 const suggestFetcher = (path: string) => api.get<PaginatedResponse<Product>>(path).then((r) => r.data);
 
-export function SearchBox({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
+export function SearchBox({
+  className,
+  onNavigate,
+  autoFocus,
+}: {
+  className?: string;
+  onNavigate?: () => void;
+  autoFocus?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(query.trim(), 250);
@@ -64,6 +72,10 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
       >
         <Search size={16} className="text-ink-soft shrink-0" />
         <input
+          autoFocus={autoFocus}
+          type="search"
+          enterKeyHint="search"
+          aria-label="Search products"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -72,12 +84,12 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
           placeholder="Search products…"
-          className="w-full bg-transparent px-2 text-sm outline-none placeholder:text-ink-soft/60"
+          className="w-full bg-transparent px-2 py-0.5 text-base outline-none placeholder:text-ink-soft/60 sm:text-sm"
         />
       </form>
 
       {open && debouncedQuery.length >= 2 && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[300px] overflow-hidden rounded-xl border border-ink/10 bg-white shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-ink/10 bg-white shadow-xl md:min-w-[300px]">
           {isLoading ? (
             <div className="flex items-center gap-2 px-4 py-6 text-sm text-ink-soft">
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-soft/40 border-t-ink-soft" />
@@ -106,7 +118,10 @@ export function SearchBox({ className, onNavigate }: { className?: string; onNav
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm text-ink">{product.name}</span>
                         <span className="block text-xs text-ink-soft">
-                          {formatPence(product.min_price_pence)}
+                          <PriceTag
+                            price={product.min_price_pence}
+                            compareAt={product.compare_at_price_pence}
+                          />
                         </span>
                       </span>
                     </button>

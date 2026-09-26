@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { api, ApiError, fieldError } from "@/lib/api";
 import { Input } from "@/components/ui/Field";
+import { NumberField } from "@/components/ui/NumberField";
 import { Button } from "@/components/ui/Button";
 import type { ProductVariant } from "@/lib/types";
 
@@ -20,7 +21,9 @@ export function VariantForm({ productId, variant, onSaved, onCancel }: VariantFo
     colour: variant?.colour ?? "",
     priceOverride: variant?.price_pence ? (variant.price_pence / 100).toFixed(2) : "",
     stock_quantity: variant ? String(variant.stock_quantity) : "0",
-    low_stock_threshold: "5",
+    // Regression guard: this used to default to "5" for every variant, so opening
+    // "Edit" and saving silently reset an already-configured threshold back to 5.
+    low_stock_threshold: variant ? String(variant.low_stock_threshold) : "5",
     is_active: variant?.is_active ?? true,
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -72,13 +75,11 @@ export function VariantForm({ productId, variant, onSaved, onCancel }: VariantFo
           onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
           error={fieldError(errors, "sku")}
         />
-        <Input
+        <NumberField
           label="Price override (£, optional)"
-          type="number"
-          min="0"
-          step="0.01"
+          decimal
           value={form.priceOverride}
-          onChange={(e) => setForm((f) => ({ ...f, priceOverride: e.target.value }))}
+          onChange={(value) => setForm((f) => ({ ...f, priceOverride: value }))}
           error={fieldError(errors, "price_override_pence")}
         />
         <Input
@@ -93,31 +94,27 @@ export function VariantForm({ productId, variant, onSaved, onCancel }: VariantFo
           onChange={(e) => setForm((f) => ({ ...f, colour: e.target.value }))}
           error={fieldError(errors, "colour")}
         />
-        <Input
+        <NumberField
           label="Stock quantity"
-          type="number"
-          min="0"
           required
           value={form.stock_quantity}
-          onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value }))}
+          onChange={(value) => setForm((f) => ({ ...f, stock_quantity: value }))}
           error={fieldError(errors, "stock_quantity")}
         />
-        <Input
+        <NumberField
           label="Low stock threshold"
-          type="number"
-          min="0"
           value={form.low_stock_threshold}
-          onChange={(e) => setForm((f) => ({ ...f, low_stock_threshold: e.target.value }))}
+          onChange={(value) => setForm((f) => ({ ...f, low_stock_threshold: value }))}
           error={fieldError(errors, "low_stock_threshold")}
         />
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-ink-soft">
+      <label className="flex min-h-11 items-center gap-3 text-sm text-ink-soft">
         <input
           type="checkbox"
           checked={form.is_active}
           onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-          className="h-4 w-4 rounded border-ink/30"
+          className="h-5 w-5 rounded border-ink/30 accent-ink"
         />
         Active
       </label>

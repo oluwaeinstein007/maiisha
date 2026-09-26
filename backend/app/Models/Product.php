@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Mail\BackInStockMail;
+use App\Services\SalePricing;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,8 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\Mail;
 
-#[Fillable(['category_id', 'name', 'slug', 'description', 'price_pence', 'is_active', 'is_featured', 'hide_when_out_of_stock'])]
+#[Fillable(['category_id', 'brand_id', 'name', 'slug', 'description', 'price_pence', 'is_active', 'is_featured', 'hide_when_out_of_stock'])]
 class Product extends Model
 {
     use HasFactory;
@@ -29,9 +32,16 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class);
+        // chaperone(): a variant's price needs its product (ProductVariant::basePriceInPence);
+        // this hands the parent over instead of running a query per variant in a list.
+        return $this->hasMany(ProductVariant::class)->chaperone();
     }
 
     public function images(): HasMany
@@ -42,6 +52,29 @@ class Product extends Model
     public function orderItems(): HasManyThrough
     {
         return $this->hasManyThrough(OrderItem::class, ProductVariant::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlistItems(): HasMany
+    {
+        return $this->hasMany(WishlistItem::class);
+    }
+
+    public function stockAlerts(): HasMany
+    {
+        return $this->hasMany(StockAlert::class);
+    }
+
+    public function notifyBackInStock(): void
+    {
+        $this->stockAlerts()->whereNull('notified_at')->each(function (StockAlert $alert) {
+            Mail::to($alert->email)->send(new BackInStockMail($this));
+            $alert->update(['notified_at' => now()]);
+        });
     }
 
     public function scopeActive(Builder $query): void
@@ -75,6 +108,22 @@ class Product extends Model
         }
 
         return $this->images->first();
+    }
+
+    /**
+     * The price a shopper is shown for the product ("from £x"): its cheapest
+     * variant once any live sale is applied. A product with no variants yet
+     * falls back to its own price.
+     *
+     * @return array{price: int, original: int, sale: ?Sale}
+     */
+    public function cheapestQuote(): array
+    {
+        if ($this->relationLoaded('variants') && $this->variants->isNotEmpty()) {
+            return $this->variants->map(fn (ProductVariant $v) => $v->quote())->sortBy('price')->first();
+        }
+
+        return app(SalePricing::class)->quote($this, $this->price_pence);
     }
 
     public function totalStock(): int

@@ -6,28 +6,137 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
-    { "key": "frontend_origin", "value": "http://localhost:3000", "type": "string" },
-    { "key": "xsrf_token", "value": "", "type": "string" },
-    { "key": "customer_email", "value": "", "type": "string" },
-    { "key": "customer_password", "value": "SecurePass123!", "type": "string" },
-    { "key": "category_slug", "value": "", "type": "string" },
-    { "key": "product_slug", "value": "", "type": "string" },
-    { "key": "variant_id", "value": "", "type": "string" },
-    { "key": "second_variant_id", "value": "", "type": "string" },
-    { "key": "cart_item_id", "value": "", "type": "string" },
-    { "key": "second_cart_item_id", "value": "", "type": "string" },
-    { "key": "address_id", "value": "", "type": "string" },
-    { "key": "address_to_delete_id", "value": "", "type": "string" },
-    { "key": "order_id", "value": "", "type": "string" },
-    { "key": "reset_token", "value": "", "type": "string", "description": "Paste manually from storage/logs/laravel.log (search 'Reset Password:') after running Auth → Forgot Password." },
-    { "key": "admin_category_id", "value": "", "type": "string" },
-    { "key": "admin_product_id", "value": "", "type": "string" },
-    { "key": "admin_product_slug", "value": "", "type": "string" },
-    { "key": "admin_variant_id", "value": "", "type": "string" },
-    { "key": "admin_variant_sku", "value": "", "type": "string" },
-    { "key": "admin_image_id", "value": "", "type": "string" },
-    { "key": "admin_discount_code_id", "value": "", "type": "string" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "frontend_origin",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "xsrf_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_password",
+      "value": "SecurePass123!",
+      "type": "string"
+    },
+    {
+      "key": "category_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "brand_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "variant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "second_variant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cart_item_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "second_cart_item_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "address_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "address_to_delete_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reset_token",
+      "value": "",
+      "type": "string",
+      "description": "Paste manually from storage/logs/laravel.log (search 'Reset Password:') after running Auth → Forgot Password."
+    },
+    {
+      "key": "admin_category_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_product_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_variant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_variant_sku",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_image_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_discount_code_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_sale_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_brand_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_customer_id",
+      "value": "",
+      "type": "string"
+    }
   ],
   "event": [
     {
@@ -93,8 +202,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/sanctum/csrf-cookie",
-              "host": ["{{base_url}}"],
-              "path": ["sanctum", "csrf-cookie"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sanctum",
+                "csrf-cookie"
+              ]
             },
             "description": "Sanctum's SPA bootstrap endpoint. Sets the XSRF-TOKEN and session cookies Postman needs for every request after this one — mirrors exactly what the real Next.js frontend does on load."
           },
@@ -128,16 +242,31 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"name\": \"Amara Bello\",\n    \"email\": \"amara.bello.{{$timestamp}}@example.com\",\n    \"password\": \"{{customer_password}}\",\n    \"password_confirmation\": \"{{customer_password}}\",\n    \"phone\": \"+447700900123\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "register"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
             },
             "description": "Creates a brand-new account (unique email each run via {{$timestamp}}, so this collection is safely re-runnable) and logs it straight in — the rest of the customer journey uses this session."
           },
@@ -159,16 +288,31 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"email\": \"{{customer_email}}\",\n    \"password\": \"{{customer_password}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
             },
             "description": "Demonstrates the login endpoint by logging back into the account Register just created (safe — doesn't switch the active journey to a different identity). To try the pre-seeded demo account instead, swap the body for customer@maiisha.test / password — just note that derails the rest of this folder's story, since it becomes the active session."
           },
@@ -191,7 +335,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/user", "host": ["{{base_url}}"], "path": ["api", "user"] },
+            "url": {
+              "raw": "{{base_url}}/api/user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "user"
+              ]
+            },
             "description": "Confirms the cookie session is authenticated as the expected user."
           },
           "response": []
@@ -214,13 +367,32 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"current_password\": \"{{customer_password}}\",\n    \"password\": \"NewSecurePass456!\",\n    \"password_confirmation\": \"NewSecurePass456!\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/auth/password", "host": ["{{base_url}}"], "path": ["api", "auth", "password"] },
+            "url": {
+              "raw": "{{base_url}}/api/auth/password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "password"
+              ]
+            },
             "description": "Updates the {{customer_password}} variable too, so any later request in this folder that re-authenticates keeps working."
           },
           "response": []
@@ -243,13 +415,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"email\": \"{{customer_email}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/auth/forgot-password", "host": ["{{base_url}}"], "path": ["api", "auth", "forgot-password"] },
+            "url": {
+              "raw": "{{base_url}}/api/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "forgot-password"
+              ]
+            },
             "description": "Always returns the same generic message whether or not the email is registered, by design. Locally (MAIL_MAILER=log) the actual reset link — including the token — is written to backend/storage/logs/laravel.log. Copy the token from there into the {{reset_token}} collection variable to try 'Reset Password' below."
           },
           "response": []
@@ -273,13 +464,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"token\": \"{{reset_token}}\",\n    \"email\": \"{{customer_email}}\",\n    \"password\": \"AnotherSecurePass789!\",\n    \"password_confirmation\": \"AnotherSecurePass789!\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/auth/reset-password", "host": ["{{base_url}}"], "path": ["api", "auth", "reset-password"] },
+            "url": {
+              "raw": "{{base_url}}/api/auth/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password"
+              ]
+            },
             "description": "Requires a real token from storage/logs/laravel.log (set it in the {{reset_token}} collection variable first) — the token can't be captured automatically since it only ever leaves the server via email/log, by design. Without it this will correctly 422."
           },
           "response": []
@@ -311,7 +521,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
             "description": "Top-level categories with their subcategories nested under `children`."
           },
           "response": []
@@ -321,7 +540,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -329,8 +553,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/categories/{{category_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "categories", "{{category_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{category_slug}}"
+              ]
             }
           },
           "response": []
@@ -361,7 +591,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/products", "host": ["{{base_url}}"], "path": ["api", "products"] },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
             "description": "Harvests the first two products' opening variant into {{variant_id}} / {{second_variant_id}} for the Cart folder."
           },
           "response": []
@@ -371,7 +610,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -379,17 +623,56 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/products?category={{category_slug}}&sort=price_asc&per_page=5",
-              "host": ["{{base_url}}"],
-              "path": ["api", "products"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
               "query": [
-                { "key": "category", "value": "{{category_slug}}", "description": "Filter by category slug" },
-                { "key": "sort", "value": "price_asc", "description": "price_asc | price_desc | best_selling | (default: newest)" },
-                { "key": "per_page", "value": "5" },
-                { "key": "search", "value": "dress", "disabled": true, "description": "FR-4 catalogue search — matches name/description" },
-                { "key": "size", "value": "M", "disabled": true },
-                { "key": "colour", "value": "Gold", "disabled": true },
-                { "key": "min_price", "value": "1000", "disabled": true, "description": "pence" },
-                { "key": "max_price", "value": "10000", "disabled": true, "description": "pence" }
+                {
+                  "key": "category",
+                  "value": "{{category_slug}}",
+                  "description": "Filter by category slug"
+                },
+                {
+                  "key": "sort",
+                  "value": "price_asc",
+                  "description": "price_asc | price_desc | best_selling | (default: newest)"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                },
+                {
+                  "key": "search",
+                  "value": "dress",
+                  "disabled": true,
+                  "description": "FR-4 catalogue search — matches name/description"
+                },
+                {
+                  "key": "size",
+                  "value": "M",
+                  "disabled": true
+                },
+                {
+                  "key": "colour",
+                  "value": "Gold",
+                  "disabled": true
+                },
+                {
+                  "key": "min_price",
+                  "value": "1000",
+                  "disabled": true,
+                  "description": "pence"
+                },
+                {
+                  "key": "max_price",
+                  "value": "10000",
+                  "disabled": true,
+                  "description": "pence"
+                }
               ]
             },
             "description": "All available query params are listed here (some disabled) so you can toggle whichever combination you want to try."
@@ -401,7 +684,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -409,9 +697,200 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/products/{{product_slug}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "products", "{{product_slug}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{product_slug}}"
+              ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Options",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "['sizes', 'colours', 'price', 'on_sale_count', 'categories', 'brands'].forEach(k => pm.test('has ' + k, () => pm.expect(body).to.have.property(k)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/filters?category={{category_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "filters"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "{{category_slug}}"
+                }
+              ]
+            },
+            "description": "What a shopper can narrow the current listing by: sorted `sizes` (S, M, L… then natural order for the rest) and `colours`, the `price` range (in pence, on the **sale** price), `on_sale_count`, and top-level `categories` with product counts. Scope it with `category` and/or `search`; add `on_sale=1` for the sale page."
+          },
+          "response": []
+        },
+        {
+          "name": "List Products — Filtered & Sorted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('paginated with a total', () => pm.expect(body.meta).to.have.property('total'));",
+                  "pm.test('products carry sale fields', () => body.data.forEach(p => { pm.expect(p).to.have.property('compare_at_price_pence'); pm.expect(p).to.have.property('sale'); }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?size=S,M&in_stock=1&max_price=10000&sort=price_asc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "S,M"
+                },
+                {
+                  "key": "in_stock",
+                  "value": "1"
+                },
+                {
+                  "key": "max_price",
+                  "value": "10000"
+                },
+                {
+                  "key": "sort",
+                  "value": "price_asc"
+                }
+              ]
+            },
+            "description": "Filters combine (AND). `brand` takes one or more brand slugs, comma-separated. `size` and `colour` take several comma-separated values and one variant must match all of them; `min_price` / `max_price` are pence and act on the price the customer pays (the sale price while a sale is live); `in_stock=1` and `on_sale=1` are switches; `sort` is `latest` (default) | `price_asc` | `price_desc` | `best_selling` | `discount` (biggest saving). Searching is case-insensitive."
+          },
+          "response": []
+        },
+        {
+          "name": "Active Sales",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const sales = pm.response.json().data;",
+                  "pm.test('each live sale has a label and no admin fields', () => sales.forEach(s => { pm.expect(s).to.have.property('label'); pm.expect(s).to.not.have.property('is_active'); }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sales/active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sales",
+                "active"
+              ]
+            },
+            "description": "The sales running right now — what the storefront's announcement banner and Sale page are built from. Only shopper-facing fields; nothing admin-side. A weekday-limited sale (a \"Monday deal\") only appears on its days, UK time."
+          },
+          "response": []
+        },
+        {
+          "name": "List Brands",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('brands have a slug and a product count', () => pm.response.json().data.forEach(b => { pm.expect(b).to.have.property('slug'); pm.expect(b.products_count).to.be.above(0); }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "brands"
+              ]
+            },
+            "description": "Live brands that have something to buy, ordered by `sort_order` then name, each with its browsable `products_count`. A hidden brand, or one with no browsable products, isn't listed."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Brand",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 or 404 if the variable is unset', () => pm.expect([200, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/brands/{{brand_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "brands",
+                "{{brand_slug}}"
+              ]
+            },
+            "description": "Set `brand_slug` from List Brands. A hidden or unknown brand is a 404. List its products with `GET /api/products?brand={{brand_slug}}`."
           },
           "response": []
         }
@@ -426,13 +905,27 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api", "cart"] }
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart"
+              ]
+            }
           },
           "response": []
         },
@@ -455,13 +948,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"product_variant_id\": {{variant_id}},\n    \"quantity\": 1\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] },
+            "url": {
+              "raw": "{{base_url}}/api/cart/items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items"
+              ]
+            },
             "description": "This is the item that survives through to Checkout."
           },
           "response": []
@@ -484,13 +996,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"product_variant_id\": {{second_variant_id}},\n    \"quantity\": 1\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/cart/items", "host": ["{{base_url}}"], "path": ["api", "cart", "items"] }
+            "url": {
+              "raw": "{{base_url}}/api/cart/items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items"
+              ]
+            }
           },
           "response": []
         },
@@ -511,12 +1042,32 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n    \"quantity\": 2\n}", "options": { "raw": { "language": "json" } } },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/cart/items/{{cart_item_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cart", "items", "{{cart_item_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items",
+                "{{cart_item_id}}"
+              ]
             }
           },
           "response": []
@@ -543,8 +1094,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/cart/items/{{second_cart_item_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "cart", "items", "{{second_cart_item_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items",
+                "{{second_cart_item_id}}"
+              ]
             },
             "description": "Leaves just the first item in the cart, ready for Checkout."
           },
@@ -560,13 +1118,27 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] }
+            "url": {
+              "raw": "{{base_url}}/api/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "addresses"
+              ]
+            }
           },
           "response": []
         },
@@ -588,13 +1160,31 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"label\": \"Home\",\n    \"full_name\": \"Amara Bello\",\n    \"line1\": \"14 Brick Lane\",\n    \"line2\": \"Flat 3\",\n    \"city\": \"London\",\n    \"postcode\": \"E1 6QL\",\n    \"country\": \"GB\",\n    \"phone\": \"+447700900123\",\n    \"is_default\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] },
+            "url": {
+              "raw": "{{base_url}}/api/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "addresses"
+              ]
+            },
             "description": "`country` must be a 2-letter ISO code (e.g. GB), not free text — this is the mistake the frontend's first draft made."
           },
           "response": []
@@ -604,21 +1194,41 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"label\": \"Home\",\n    \"full_name\": \"Amara Bello\",\n    \"line1\": \"14 Brick Lane\",\n    \"line2\": \"Flat 3B\",\n    \"city\": \"London\",\n    \"postcode\": \"E1 6QL\",\n    \"country\": \"GB\",\n    \"phone\": \"+447700900123\",\n    \"is_default\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/addresses/{{address_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "addresses", "{{address_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "addresses",
+                "{{address_id}}"
+              ]
             }
           },
           "response": []
@@ -639,13 +1249,31 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"label\": \"Work\",\n    \"full_name\": \"Amara Bello\",\n    \"line1\": \"1 Canary Wharf\",\n    \"city\": \"London\",\n    \"postcode\": \"E14 5AB\",\n    \"country\": \"GB\",\n    \"is_default\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] }
+            "url": {
+              "raw": "{{base_url}}/api/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "addresses"
+              ]
+            }
           },
           "response": []
         },
@@ -654,7 +1282,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -662,8 +1295,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/addresses/{{address_to_delete_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "addresses", "{{address_to_delete_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "addresses",
+                "{{address_to_delete_id}}"
+              ]
             },
             "description": "Deletes the throwaway 'Work' address, not the default one Checkout uses."
           },
@@ -693,9 +1332,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
-            "url": { "raw": "{{base_url}}/api/checkout/preview", "host": ["{{base_url}}"], "path": ["api", "checkout", "preview"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/checkout/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "preview"
+              ]
+            },
             "description": "No discount code — baseline totals for what's currently in the cart."
           },
           "response": []
@@ -716,13 +1378,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"discount_code\": \"welcome10\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/checkout/preview", "host": ["{{base_url}}"], "path": ["api", "checkout", "preview"] },
+            "url": {
+              "raw": "{{base_url}}/api/checkout/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "preview"
+              ]
+            },
             "description": "Uses the pre-seeded WELCOME10 code (10% off, no usage limit). Deliberately sent lowercase to demonstrate matching is case-insensitive."
           },
           "response": []
@@ -755,13 +1436,31 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"address_id\": {{address_id}},\n    \"discount_code\": \"WELCOME10\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/checkout", "host": ["{{base_url}}"], "path": ["api", "checkout"] },
+            "url": {
+              "raw": "{{base_url}}/api/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            },
             "description": "Reserves stock and creates the order (status `pending_payment`) *before* talking to Stripe, then requests a PaymentIntent. With the placeholder STRIPE_KEY/STRIPE_SECRET shipped in .env.example, this correctly 422s at the payment-gateway step and cleanly releases the reserved stock — that's the intended failure path, not a bug. Drop in real Stripe test keys to see it succeed all the way to a `client_secret`."
           },
           "response": []
@@ -776,13 +1475,27 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/orders", "host": ["{{base_url}}"], "path": ["api", "orders"] }
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
           },
           "response": []
         },
@@ -808,8 +1521,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/orders/{{order_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "orders", "{{order_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{order_id}}"
+              ]
             }
           },
           "response": []
@@ -836,13 +1555,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"email\": \"admin@maiisha.test\",\n    \"password\": \"password\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
           },
           "response": []
         }
@@ -871,7 +1609,17 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/admin/dashboard", "host": ["{{base_url}}"], "path": ["api", "admin", "dashboard"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard"
+              ]
+            },
             "description": "Order/revenue totals only count paid statuses (placed/processing/shipped/out_for_delivery/delivered) — a pending_payment order from an incomplete checkout won't show up here or in revenue_pence. `revenue_growth_percent` compares this calendar month's paid revenue to last month's (null with no prior-month baseline yet). `daily_revenue` is a zero-filled 14-day series for a trend chart."
           },
           "response": []
@@ -886,13 +1634,28 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/admin/categories", "host": ["{{base_url}}"], "path": ["api", "admin", "categories"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories"
+              ]
+            },
             "description": "Unlike the public /api/categories endpoint, this is a flat list (no is_active-style filtering) intended for a management table, not storefront nav."
           },
           "response": []
@@ -915,13 +1678,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"name\": \"Summer Collection\",\n    \"description\": \"Limited seasonal drop.\",\n    \"sort_order\": 10\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/admin/categories", "host": ["{{base_url}}"], "path": ["api", "admin", "categories"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories"
+              ]
+            },
             "description": "`slug` is optional — omit it (as here) to have it auto-generated from `name`."
           },
           "response": []
@@ -931,21 +1713,42 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"name\": \"Summer Collection 2026\",\n    \"description\": \"Limited seasonal drop — updated copy.\",\n    \"sort_order\": 10\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/admin/categories/{{admin_category_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "categories", "{{admin_category_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories",
+                "{{admin_category_id}}"
+              ]
             }
           },
           "response": []
@@ -970,8 +1773,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/categories/{{admin_category_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "categories", "{{admin_category_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories",
+                "{{admin_category_id}}"
+              ]
             },
             "description": "Run this BEFORE '10 - Admin - Products' and it succeeds (200) since the category is still empty. Run it AFTER creating 'Golden Hour Maxi Dress' in that folder and it correctly 409s instead of silently cascade-deleting the product — categories with products can't be deleted until they're reassigned or removed."
           },
@@ -987,13 +1797,28 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/admin/products", "host": ["{{base_url}}"], "path": ["api", "admin", "products"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products"
+              ]
+            },
             "description": "Unlike the public catalogue, this also returns inactive/out-of-stock products — a management view, not a storefront view."
           },
           "response": []
@@ -1016,13 +1841,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — part of the Summer Collection.\",\n    \"price_pence\": 8999,\n    \"is_active\": true,\n    \"is_featured\": true,\n    \"hide_when_out_of_stock\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/admin/products", "host": ["{{base_url}}"], "path": ["api", "admin", "products"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products"
+              ]
+            },
             "description": "`price_pence` is the base price shown when a variant has no `price_override_pence` of its own. `hide_when_out_of_stock` (FR-23) defaults to `false` — an out-of-stock product still shows on the storefront marked \"out of stock\" unless set `true`. Uses the category created in '09 - Admin - Categories'."
           },
           "response": []
@@ -1032,7 +1876,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -1040,8 +1889,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "products", "{{admin_product_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "{{admin_product_id}}"
+              ]
             }
           },
           "response": []
@@ -1051,21 +1907,42 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"category_id\": {{admin_category_id}},\n    \"name\": \"Golden Hour Maxi Dress\",\n    \"description\": \"Flowing maxi dress in a rich gold tone — now 10% more golden.\",\n    \"price_pence\": 9499,\n    \"is_active\": true,\n    \"is_featured\": true,\n    \"hide_when_out_of_stock\": false\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "products", "{{admin_product_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "{{admin_product_id}}"
+              ]
             }
           },
           "response": []
@@ -1088,16 +1965,33 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"sku\": \"GHD-{{$randomInt}}\",\n    \"size\": \"M\",\n    \"colour\": \"Gold\",\n    \"stock_quantity\": 25,\n    \"low_stock_threshold\": 5\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}/variants",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "products", "{{admin_product_id}}", "variants"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "{{admin_product_id}}",
+                "variants"
+              ]
             },
             "description": "`price_override_pence` is omitted — this variant inherits the product's price_pence (9499). Set it to override just this variant's price (e.g. a size that costs more)."
           },
@@ -1119,16 +2013,32 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"sku\": \"{{admin_variant_sku}}\",\n    \"size\": \"M\",\n    \"colour\": \"Gold\",\n    \"stock_quantity\": 40,\n    \"low_stock_threshold\": 5,\n    \"is_active\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/admin/variants/{{admin_variant_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "variants", "{{admin_variant_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "variants",
+                "{{admin_variant_id}}"
+              ]
             },
             "description": "This is also the endpoint for stock adjustments (FR-22) — it's a full replace, not a partial patch, so re-send every field (sku/size/colour/stock_quantity all required) even when you only mean to change the stock count."
           },
@@ -1154,15 +2064,37 @@
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "image", "type": "file", "src": [], "description": "Select any local image file — required, max 5MB." },
-                { "key": "alt_text", "value": "Model wearing the Golden Hour Maxi Dress", "type": "text" },
-                { "key": "colour", "value": "Gold", "type": "text", "description": "Optional (FR-3). Ties this photo to a variant colour — Product::imageFor() matches it case-insensitively against the selected variant's colour on the storefront, cart and order history, falling back to the product's first photo when no colour matches." }
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select any local image file — required, max 5MB."
+                },
+                {
+                  "key": "alt_text",
+                  "value": "Model wearing the Golden Hour Maxi Dress",
+                  "type": "text"
+                },
+                {
+                  "key": "colour",
+                  "value": "Gold",
+                  "type": "text",
+                  "description": "Optional (FR-3). Ties this photo to a variant colour — Product::imageFor() matches it case-insensitively against the selected variant's colour on the storefront, cart and order history, falling back to the product's first photo when no colour matches."
+                }
               ]
             },
             "url": {
               "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}/images",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "products", "{{admin_product_id}}", "images"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "{{admin_product_id}}",
+                "images"
+              ]
             },
             "description": "Postman can't ship a binary file inside a shared collection export — click into the `image` form field and choose any local image before sending this request."
           },
@@ -1187,16 +2119,32 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"colour\": \"Gold\",\n    \"alt_text\": \"Model wearing the Golden Hour Maxi Dress\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/admin/images/{{admin_image_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "images", "{{admin_image_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "images",
+                "{{admin_image_id}}"
+              ]
             },
             "description": "Re-tags an already-uploaded photo's colour/alt text without re-uploading it — useful for backfilling colour on photos uploaded before this field existed."
           },
@@ -1224,8 +2172,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/images/{{admin_image_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "images", "{{admin_image_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "images",
+                "{{admin_image_id}}"
+              ]
             }
           },
           "response": []
@@ -1235,7 +2190,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -1243,8 +2203,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/variants/{{admin_variant_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "variants", "{{admin_variant_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "variants",
+                "{{admin_variant_id}}"
+              ]
             },
             "description": "Safe even if the variant is referenced by past orders — order line items snapshot their own product_name/sku/price at purchase time, so deleting the live variant doesn't touch order history."
           },
@@ -1255,7 +2222,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -1263,8 +2235,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/products/{{admin_product_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "products", "{{admin_product_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "{{admin_product_id}}"
+              ]
             },
             "description": "Run this last in the folder — deletes the product created above, which then lets '09 - Admin - Categories → Delete Category' succeed if you re-run it."
           },
@@ -1281,13 +2260,28 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/admin/orders", "host": ["{{base_url}}"], "path": ["api", "admin", "orders"] }
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders"
+              ]
+            }
           },
           "response": []
         },
@@ -1296,7 +2290,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -1304,12 +2303,59 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/orders?status=pending_payment",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "orders"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders"
+              ],
               "query": [
-                { "key": "status", "value": "pending_payment", "description": "placed | processing | shipped | out_for_delivery | delivered | cancelled | pending_payment" }
+                {
+                  "key": "status",
+                  "value": "pending_payment",
+                  "description": "placed | processing | shipped | out_for_delivery | delivered | cancelled | pending_payment"
+                }
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders?search=MAI",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "MAI"
+                }
+              ]
+            },
+            "description": "Matches order number, customer name or email."
           },
           "response": []
         },
@@ -1335,8 +2381,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/orders/{{order_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "orders", "{{order_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{order_id}}"
+              ]
             }
           },
           "response": []
@@ -1360,12 +2413,33 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n    \"status\": \"processing\"\n}", "options": { "raw": { "language": "json" } } },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"processing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{order_id}}",
+                "status"
+              ]
             },
             "description": "Note: the API doesn't enforce a strict status state-machine (e.g. it won't stop you jumping straight from pending_payment to shipped) — that's intentional, so admins can correct mistakes, but it means Postman can walk the full lifecycle here without needing a real Stripe webhook to fire first."
           },
@@ -1391,12 +2465,33 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n    \"status\": \"shipped\"\n}", "options": { "raw": { "language": "json" } } },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"shipped\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{order_id}}",
+                "status"
+              ]
             },
             "description": "Auto-creates a shipment record (via the ShippingProvider interface — a logging stand-in until a real courier aggregator is contracted, per PRD §9) and fires the email+SMS 'shipped' notification (FR-18). Check backend/storage/logs/laravel.log to see both."
           },
@@ -1421,12 +2516,33 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n    \"status\": \"out_for_delivery\"\n}", "options": { "raw": { "language": "json" } } },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"out_for_delivery\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{order_id}}",
+                "status"
+              ]
             },
             "description": "Fires the email+SMS 'out for delivery' notification (FR-9/FR-18) and updates the shipment's status. Run after 'Shipped' to see it stack in backend/storage/logs/laravel.log."
           },
@@ -1451,13 +2567,67 @@
           ],
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n    \"status\": \"delivered\"\n}", "options": { "raw": { "language": "json" } } },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"delivered\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/admin/orders/{{order_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "orders", "{{order_id}}", "status"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{order_id}}",
+                "status"
+              ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Refund Order (full)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 refunded, 422 no succeeded payment, or 502 gateway failure', () => pm.expect([200,422,502]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/{{order_id}}/refund",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "orders",
+                "{{order_id}}",
+                "refund"
+              ]
+            },
+            "description": "Refunds the whole payment via Stripe, then restocks, frees the discount code and cancels the order. 422 when there is no succeeded payment; 502 leaves the order untouched."
           },
           "response": []
         }
@@ -1471,13 +2641,28 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/api/admin/discount-codes", "host": ["{{base_url}}"], "path": ["api", "admin", "discount-codes"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes"
+              ]
+            },
             "description": "Includes a usages_count for each code."
           },
           "response": []
@@ -1500,13 +2685,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"code\": \"summer25\",\n    \"type\": \"percentage\",\n    \"value\": 25,\n    \"usage_limit\": 100,\n    \"expires_at\": \"2026-12-31 23:59:59\",\n    \"is_active\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/admin/discount-codes", "host": ["{{base_url}}"], "path": ["api", "admin", "discount-codes"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes"
+              ]
+            },
             "description": "Sent lowercase deliberately — codes are always normalised to uppercase on save, and matched case-insensitively at checkout. `type` is `percentage` (value = percentage points, capped at 100) or `fixed` (value = pence off)."
           },
           "response": []
@@ -1516,7 +2720,12 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
@@ -1524,8 +2733,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/discount-codes/{{admin_discount_code_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "discount-codes", "{{admin_discount_code_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes",
+                "{{admin_discount_code_id}}"
+              ]
             }
           },
           "response": []
@@ -1535,21 +2751,42 @@
           "event": [
             {
               "listen": "test",
-              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"] }
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
             }
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"code\": \"SUMMER25\",\n    \"type\": \"percentage\",\n    \"value\": 30,\n    \"usage_limit\": 50,\n    \"expires_at\": \"2026-12-31 23:59:59\",\n    \"is_active\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/admin/discount-codes/{{admin_discount_code_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "discount-codes", "{{admin_discount_code_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes",
+                "{{admin_discount_code_id}}"
+              ]
             }
           },
           "response": []
@@ -1570,13 +2807,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"code\": \"TOOGOOD\",\n    \"type\": \"percentage\",\n    \"value\": 150,\n    \"is_active\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/admin/discount-codes", "host": ["{{base_url}}"], "path": ["api", "admin", "discount-codes"] },
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes"
+              ]
+            },
             "description": "Deliberately invalid — demonstrates the validation guard against a nonsensical >100% discount."
           },
           "response": []
@@ -1600,17 +2856,1078 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/discount-codes/{{admin_discount_code_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "admin", "discount-codes", "{{admin_discount_code_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes",
+                "{{admin_discount_code_id}}"
+              ]
             },
             "description": "This is a soft-deactivate (is_active → false), never a hard delete — preserves usage history for reporting."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Fixed-Amount Discount Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const code = pm.response.json();",
+                  "pm.test('stored as a fixed 500p code', () => { pm.expect(code.type).to.eql('fixed'); pm.expect(code.value).to.eql(500); pm.expect(code.code).to.eql('POSTMAN5'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/discount-codes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "discount-codes"
+              ]
+            },
+            "description": "A promo code is either a percentage off or a FIXED amount off. For `type: \"fixed\"` the `value` is pence (500 = £5.00 off); checkout never takes more than the subtotal off. Percentage values are capped at 100, fixed amounts aren't.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"postman5\",\n    \"type\": \"fixed\",\n    \"value\": 500,\n    \"usage_limit\": 50,\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "13 - Webhooks (Reference)",
+      "name": "13 - Admin - Brands",
+      "description": "Brands (labels) for products: shoppers can filter by brand and browse each brand's page, and a sale can target a whole brand. A brand that still has products can't be deleted (409) — switch it off with `is_active: false` instead, which hides its page, filter and label while its products stay on sale. The slug is set from the name at creation and does not change when the brand is renamed. Logo upload is `POST /api/admin/brands/{id}/logo` (multipart, field `logo`, image up to 2 MB) — send it from Postman's form-data tab; it isn't part of this run so the collection stays runnable without a file. Run 07 - Admin - Auth first.",
+      "item": [
+        {
+          "name": "List Brands (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('each brand has a product count', () => pm.response.json().data.forEach(b => pm.expect(b).to.have.property('products_count')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "brands"
+              ]
+            },
+            "description": "Every brand, hidden ones included, with `products_count`, ordered by `sort_order` then name."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Brand",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const brand = pm.response.json().data;",
+                  "pm.test('slug is derived from the name', () => pm.expect(brand.slug).to.match(/^postman-label(-\\d+)?$/));",
+                  "pm.collectionVariables.set('admin_brand_id', brand.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "brands"
+              ]
+            },
+            "description": "The slug comes from the name; a name that would collide gets `-2`, `-3`… instead of failing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Postman Label\",\n    \"description\": \"Created from the Postman collection\",\n    \"sort_order\": 50,\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Brand",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/brands/{{admin_brand_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "brands",
+                "{{admin_brand_id}}"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Update Brand (rename keeps the slug)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('name changed, slug did not', () => { const b = pm.response.json().data; pm.expect(b.name).to.eql('Postman Label (renamed)'); pm.expect(b.slug).to.match(/^postman-label/); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/brands/{{admin_brand_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "brands",
+                "{{admin_brand_id}}"
+              ]
+            },
+            "description": "Renaming doesn't move the brand's URL.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Postman Label (renamed)\",\n    \"description\": \"Renamed\",\n    \"sort_order\": 50,\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject: Bad Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('slug is flagged', () => pm.expect(pm.response.json().errors).to.have.property('slug'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "brands"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Bad\",\n    \"slug\": \"not a slug!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Brand",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/brands/{{admin_brand_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "brands",
+                "{{admin_brand_id}}"
+              ]
+            },
+            "description": "Only allowed while the brand has no products (otherwise 409). To check the guard, assign the brand to a product first (`brand_id` on Update Product)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14 - Admin - Sales",
+      "description": "Seasonal and recurring automatic price reductions (Christmas, Ileya, \"Monday deals\"). Sales need no code: while one is live, everything it covers is cheaper in listings, the product page, cart, checkout and the order itself. The best price wins where sales overlap (they don't stack); a discount code still applies on top. Dates are read as **UK time**; `active_weekdays` are ISO days (1 = Monday … 7 = Sunday), null = every day. Sales are MANUAL by default: `is_active` is the switch (Activate / Deactivate), and a sale with no dates and no weekdays is live exactly while it is active — the way Christmas, Ileya and Black Friday work. Dates and weekdays are optional extras. Run 07 - Admin - Auth first.",
+      "item": [
+        {
+          "name": "List Sales",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('each sale reports a status', () => pm.response.json().data.forEach(s => pm.expect(['live','scheduled','ended','inactive']).to.include(s.status)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales"
+              ]
+            },
+            "description": "Newest first, every status, with the categories/products each covers. `status` is `live`, `scheduled` (not started yet, or between its weekdays), `ended` or `inactive` (switched off)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sale (Monday Deal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const sale = pm.response.json().data;",
+                  "pm.test('label is derived from the discount', () => pm.expect(sale.discount_label).to.eql('10% off'));",
+                  "pm.collectionVariables.set('admin_sale_id', sale.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales"
+              ]
+            },
+            "description": "A recurring Monday deal: no dates, just `active_weekdays: [1]`. For a dated sale send `starts_at` / `ends_at` as `YYYY-MM-DDTHH:mm` (UK time). To limit it, send `applies_to: \"selected\"` with any mix of `category_ids` (lines — subcategories included), `brand_ids` and `product_ids`. A sale with nothing chosen yet is a valid draft.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Monday Deals (Postman)\",\n    \"description\": \"Every Monday: 10% off\",\n    \"type\": \"percentage\",\n    \"value\": 10,\n    \"applies_to\": \"all\",\n    \"starts_at\": null,\n    \"ends_at\": null,\n    \"active_weekdays\": [\n        1\n    ],\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales/{{admin_sale_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales",
+                "{{admin_sale_id}}"
+              ]
+            },
+            "description": "Includes `starts_at_local` / `ends_at_local` — the same instants as UK wall-clock time, which is what a date-time form field reads and writes."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('value updated', () => pm.expect(pm.response.json().data.value).to.eql(15));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales/{{admin_sale_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales",
+                "{{admin_sale_id}}"
+              ]
+            },
+            "description": "A full replace (send every field). Prices across the shop change the moment it's saved.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Monday Deals (Postman, updated)\",\n    \"description\": \"Every Monday: 10% off\",\n    \"type\": \"percentage\",\n    \"value\": 15,\n    \"applies_to\": \"all\",\n    \"starts_at\": null,\n    \"ends_at\": null,\n    \"active_weekdays\": [\n        1\n    ],\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject: 100% Off",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('value is flagged', () => pm.expect(pm.response.json().errors).to.have.property('value'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales"
+              ]
+            },
+            "description": "A percentage sale is capped at 99% — 100% off would create £0 lines the payment provider can't charge.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Monday Deals (Postman)\",\n    \"description\": \"Every Monday: 10% off\",\n    \"type\": \"percentage\",\n    \"value\": 100,\n    \"applies_to\": \"all\",\n    \"starts_at\": null,\n    \"ends_at\": null,\n    \"active_weekdays\": [\n        1\n    ],\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales/{{admin_sale_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales",
+                "{{admin_sale_id}}"
+              ]
+            },
+            "description": "Never a hard delete: it switches the sale off (`is_active: false`), so a past campaign keeps its name in analytics. Switch it back on with Update Sale."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sale (manual draft — Black Friday)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const sale = pm.response.json().data;",
+                  "pm.test('is an inactive draft', () => { pm.expect(sale.status).to.eql('inactive'); pm.expect(sale.starts_at).to.eql(null); pm.expect(sale.active_weekdays).to.eql(null); });",
+                  "pm.collectionVariables.set('admin_sale_id', sale.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales"
+              ]
+            },
+            "description": "A seasonal campaign the way it's meant to work: no dates, saved as a DRAFT (`is_active: false`), covering a line, a brand and (optionally) products. Nothing changes in the shop until it is activated.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Black Friday (Postman)\",\n    \"description\": \"Our biggest deals of the year\",\n    \"type\": \"percentage\",\n    \"value\": 30,\n    \"applies_to\": \"selected\",\n    \"category_ids\": [{{admin_category_id}}],\n    \"brand_ids\": [{{admin_brand_id}}],\n    \"product_ids\": [],\n    \"starts_at\": null,\n    \"ends_at\": null,\n    \"active_weekdays\": null,\n    \"is_active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activate Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('is now active', () => pm.expect(pm.response.json().data.is_active).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sales/{{admin_sale_id}}/activate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sales",
+                "{{admin_sale_id}}",
+                "activate"
+              ]
+            },
+            "description": "Switches the sale on: for a manual sale it is live straight away and stays live until Deactivate. A dated or weekly sale becomes eligible and runs on its own dates/days."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "15 - Admin - Analytics",
+      "description": "Numbers for the admin Analytics page, for a chosen period against the equal-length period before it. Only paid orders count as sales. \"Days\" are UK days, not UTC.",
+      "item": [
+        {
+          "name": "Analytics (last 30 days)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "['range','kpis','money','customers','timeseries','weekdays','top_products','categories','statuses','sales','discount_codes'].forEach(k => pm.test('has ' + k, () => pm.expect(r).to.have.property(k)));",
+                  "pm.test('money reconciles', () => { const m = r.money; pm.expect(m.list_price_pence - m.sale_savings_pence - m.code_discounts_pence + m.shipping_pence).to.eql(m.total_pence); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/analytics?range=30d",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "30d"
+                }
+              ]
+            },
+            "description": "`range` = `7d` | `30d` (default) | `90d` | `12m` | `ytd` | `custom` (then `from` and `to`, `YYYY-MM-DD`, up to two years). The time series is zero-filled and grouped by day, then week (past 62 days), then month (past ~6 months); each bucket also carries the previous period's revenue for an overlay. `change_percent` is null when there's nothing earlier to compare against."
+          },
+          "response": []
+        },
+        {
+          "name": "Analytics (custom range)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('range echoes the dates', () => pm.expect(pm.response.json().range.from).to.eql('2026-01-01'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/analytics?range=custom&from=2026-01-01&to=2026-12-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "custom"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31"
+                }
+              ]
+            },
+            "description": "An end date in the future is clamped to today."
+          },
+          "response": []
+        },
+        {
+          "name": "Reject: Custom Range Without Dates",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/analytics?range=custom",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "custom"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Export Paid Orders (CSV)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('is a CSV', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/analytics/export?range=30d",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "analytics",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "30d"
+                }
+              ]
+            },
+            "description": "The period's paid orders as a CSV for bookkeeping / the VAT return: amounts in pounds, dates in UK time. Customer-supplied text is neutralised against spreadsheet formula injection."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "16 - Admin - Notifications",
+      "description": "The notification bell's feed — synthesised from real state (new paid orders, low/out-of-stock variants, checkouts stuck on pending payment for 2+ hours, sales ending within a day), not a stored table. \"Unread\" is one per-admin cursor (`users.notifications_read_at`), not a flag per item, so marking read clears everything up to now in one call. A sale ending soon is shown but never counts toward the unread badge (it's a standing heads-up, not a one-off event). Run 07 - Admin - Auth first.",
+      "item": [
+        {
+          "name": "List Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "['notifications', 'unread_count', 'read_at'].forEach(k => pm.test('has ' + k, () => pm.expect(body).to.have.property(k)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "notifications"
+              ]
+            },
+            "description": "Sorted newest first, capped at 30. Each item's `id` is a stable string (`order-12`, `stock-5`, `sale-3`, `stale-9`) suited to a React key. `unread_count` only counts countable types (orders, stock, stale checkouts) — never sales ending soon."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notifications Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns the new read_at', () => pm.expect(pm.response.json()).to.have.property('read_at'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/notifications/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "notifications",
+                "read"
+              ]
+            },
+            "description": "Sets the cursor to now — every notification up to this instant is read; anything created after (even a second later) is unread again on the next fetch."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "17 - Admin - Customers",
+      "description": "Customer accounts (role=customer only — an admin account is never listed or messageable here, and is a 404 if tried by id). `orders_count`/`total_spent_pence` count paid orders only; a customer with three abandoned checkouts and no purchases shows £0. Run 07 - Admin - Auth first.",
+      "item": [
+        {
+          "name": "List Customers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('paginated with order stats per customer', () => body.data.forEach(c => { pm.expect(c).to.have.property('orders_count'); pm.expect(c).to.have.property('total_spent_pence'); }));",
+                  "if (body.data.length) pm.collectionVariables.set('admin_customer_id', body.data[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/customers?search=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Search by name or email with `search`."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Customers (CSV)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('is CSV', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/customers/export?search=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "customers",
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "CSV of customers matching `search`: name, email, phone, joined, paid orders, total spent."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('addresses are included', () => pm.expect(pm.response.json().data).to.have.property('addresses'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/customers/{{admin_customer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "customers",
+                "{{admin_customer_id}}"
+              ]
+            },
+            "description": "Includes the customer's saved addresses."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer's Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/customers/{{admin_customer_id}}/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "customers",
+                "{{admin_customer_id}}",
+                "orders"
+              ]
+            },
+            "description": "Paid and unpaid alike, newest first — unlike the dashboard/analytics figures, which count paid orders only."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message to Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('confirms sent', () => pm.expect(pm.response.json().message).to.eql('Message sent.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/customers/{{admin_customer_id}}/message",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "customers",
+                "{{admin_customer_id}}",
+                "message"
+              ]
+            },
+            "description": "A one-off email, not an order-status notification (see OrderNotifier) — it never texts them, and needs no order/status to send.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"subject\": \"About your recent order\",\n    \"message\": \"Hi, just checking your recent order arrived safely. Let us know if anything's wrong!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "18 - Webhooks (Reference)",
       "description": "Not directly runnable from Postman — Stripe cryptographically signs every webhook request (see StripeWebhookController), and a hand-crafted Postman request has no way to produce a valid signature for STRIPE_WEBHOOK_SECRET. This request documents the contract instead. To actually exercise it locally, use the Stripe CLI: `stripe listen --forward-to localhost:8000/api/webhooks/stripe`, then `stripe trigger payment_intent.succeeded`.",
       "item": [
         {
@@ -1628,13 +3945,32 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"type\": \"payment_intent.succeeded\",\n    \"data\": { \"object\": { \"id\": \"pi_example\" } }\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "{{base_url}}/api/webhooks/stripe", "host": ["{{base_url}}"], "path": ["api", "webhooks", "stripe"] },
+            "url": {
+              "raw": "{{base_url}}/api/webhooks/stripe",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "stripe"
+              ]
+            },
             "description": "Sending this as-is (no Stripe-Signature header) correctly gets rejected with 400 'Invalid signature' — that's the expected, secure behaviour being demonstrated, not something to fix. Handled events: `payment_intent.succeeded` (marks the order placed, sends the placed notification) and `payment_intent.payment_failed` (cancels the order, restocks items, removes any discount-code usage record)."
           },
           "response": []

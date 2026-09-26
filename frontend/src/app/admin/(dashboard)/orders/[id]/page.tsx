@@ -30,6 +30,8 @@ export default function AdminOrderDetailPage() {
   const [nextStatus, setNextStatus] = useState<OrderStatus | "">("");
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refunding, setRefunding] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
 
   if (!order) {
     return <p className="text-sm text-ink-soft">Loading…</p>;
@@ -47,6 +49,25 @@ export default function AdminOrderDetailPage() {
       setError(err instanceof ApiError ? err.message : "Could not update order status.");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const canRefund = order.payment?.status === "succeeded" && order.status !== "cancelled";
+
+  const handleRefund = async () => {
+    if (!canRefund) return;
+    if (!window.confirm(`Refund ${formatPence(order.total_pence)} to ${order.customer?.name ?? "this customer"}? This cannot be undone.`)) {
+      return;
+    }
+    setRefunding(true);
+    setRefundError(null);
+    try {
+      await api.post(`/api/admin/orders/${order.id}/refund`);
+      mutate();
+    } catch (err) {
+      setRefundError(err instanceof ApiError ? err.message : "Could not process the refund.");
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -102,6 +123,25 @@ export default function AdminOrderDetailPage() {
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
 
+      {order.payment && (
+        <div className="rounded-xl border border-ink/10 bg-white p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg text-ink">Payment</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                {order.payment.provider} · {order.payment.status} · {formatPence(order.payment.amount_pence)}
+              </p>
+            </div>
+            {canRefund && (
+              <Button variant="danger" onClick={handleRefund} loading={refunding}>
+                Refund order
+              </Button>
+            )}
+          </div>
+          {refundError && <p className="mt-2 text-sm text-red-600">{refundError}</p>}
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="rounded-xl border border-ink/10 bg-white">
           <ul className="divide-y divide-ink/10">
@@ -125,6 +165,9 @@ export default function AdminOrderDetailPage() {
                       {[item.size, item.colour].filter(Boolean).join(" / ")} · Qty {item.quantity} ·{" "}
                       {item.sku}
                     </p>
+                    {item.sale_name && (
+                      <p className="mt-0.5 text-[11px] font-medium text-emerald-700">{item.sale_name}</p>
+                    )}
                   </div>
                 </div>
                 <p className="text-sm text-ink">{formatPence(item.line_total_pence)}</p>
@@ -142,7 +185,12 @@ export default function AdminOrderDetailPage() {
               </div>
               {order.discount_pence > 0 && (
                 <div className="flex justify-between text-ink-soft">
-                  <dt>Discount</dt>
+                  <dt>
+                    Discount
+                    {order.discount_code && (
+                      <span className="ml-1 text-xs text-ink-soft/70">({order.discount_code.code})</span>
+                    )}
+                  </dt>
                   <dd className="text-ink">-{formatPence(order.discount_pence)}</dd>
                 </div>
               )}
