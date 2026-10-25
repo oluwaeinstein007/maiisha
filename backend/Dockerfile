@@ -27,7 +27,13 @@ RUN composer install \
 # vendor stage was selected to a fixed stage name here instead.
 FROM ${VENDOR_STAGE} AS vendor-selected
 
-FROM php:8.3-fpm-alpine AS app
+# Pinned to a patch release, not the floating 8.3 tag: `compose up --build`
+# reuses a cached base image unless --pull is passed, so a floating tag can
+# silently keep shipping a vulnerable PHP. 8.3.36 fixes the PHP2Shell RCEs
+# (CVE-2026-109618 / CVE-2026-109619) — bump this on each PHP security release.
+# The digest is the multi-arch index, so a re-pushed tag can't change the build;
+# get the new one with `docker buildx imagetools inspect php:<tag>` when bumping.
+FROM php:8.3.36-fpm-alpine@sha256:aaf1ad25fc6484613be770743d1038e98e3e7e07409d78b97410eccdf3628f75 AS app
 
 RUN apk add --no-cache \
         libpq-dev \
